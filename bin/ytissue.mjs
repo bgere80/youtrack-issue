@@ -173,16 +173,40 @@ async function loadJsonFile(filePath) {
   }
 }
 
+function interpolateEnvValue(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  return value.replace(/\$\{([A-Z0-9_]+)\}/gu, (_, variableName) => process.env[variableName] ?? '');
+}
+
+function interpolateEnvInObject(value) {
+  if (Array.isArray(value)) {
+    return value.map(interpolateEnvInObject);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, interpolateEnvInObject(nestedValue)])
+    );
+  }
+
+  return interpolateEnvValue(value);
+}
+
 function getConfigDir() {
   return path.join(os.homedir(), '.config', 'youtrack-issue');
 }
 
 async function loadGlobalAliasConfig() {
-  return loadJsonFile(path.join(getConfigDir(), 'config.json'));
+  const config = await loadJsonFile(path.join(getConfigDir(), 'config.json'));
+  return interpolateEnvInObject(config);
 }
 
 async function loadAliasConfigFromPath(configPath) {
-  return loadJsonFile(path.resolve(configPath));
+  const config = await loadJsonFile(path.resolve(configPath));
+  return interpolateEnvInObject(config);
 }
 
 function resolveAliasConfig(globalConfig, alias) {

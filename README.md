@@ -29,15 +29,39 @@ For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 
 ```json
 {
-  "defaultAlias": "billingo",
+  "defaultAlias": "work",
   "aliases": {
-    "billingo": {
-      "baseUrl": "https://youtrack.billingo.com",
-      "token": "perm-..."
+    "work": {
+      "baseUrl": "https://youtrack.example.com",
+      "token": "paste-your-token-here"
     }
   }
 }
 ```
+
+Any string value in the JSON config can also use an environment variable reference:
+
+```json
+{
+  "defaultAlias": "${YOUTRACK_DEFAULT_ALIAS}",
+  "aliases": {
+    "work": {
+      "baseUrl": "${YOUTRACK_WORK_BASE_URL}",
+      "token": "${YOUTRACK_WORK_TOKEN}"
+    }
+  }
+}
+```
+
+Example environment:
+
+```bash
+YOUTRACK_DEFAULT_ALIAS=work
+YOUTRACK_WORK_BASE_URL=https://youtrack.example.com
+YOUTRACK_WORK_TOKEN=perm-...
+```
+
+There is also a repo example at `config.example.json`.
 
 ## Usage
 
@@ -56,19 +80,19 @@ node ./bin/ytissue.mjs --comments AB-3941
 ```
 
 ```bash
-node ./bin/ytissue.mjs -a billingo AB-3941
+node ./bin/ytissue.mjs -a work AB-3941
 ```
 
 ```bash
-node ./bin/ytissue.mjs billingo AB-3941
+node ./bin/ytissue.mjs work AB-3941
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json -a billingo AB-3941
+node ./bin/ytissue.mjs -c ./config.example.json -a work AB-3941
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json AB-3941
+node ./bin/ytissue.mjs -c ./config.example.json AB-3941
 ```
 
 Or install globally from the repo:
@@ -81,8 +105,8 @@ youtrack-issue AB-3941
 Short alias:
 
 ```bash
-ytissue -a billingo AB-3941
-ytissue billingo AB-3941
+ytissue -a work AB-3941
+ytissue work AB-3941
 ```
 
 Help:
