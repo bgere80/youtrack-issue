@@ -29,6 +29,7 @@ For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 
 ```json
 {
+  "defaultAlias": "billingo",
   "aliases": {
     "billingo": {
       "baseUrl": "https://youtrack.billingo.com",
@@ -43,6 +44,8 @@ For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 ```bash
 node ./bin/ytissue.mjs AB-3941
 ```
+
+If `defaultAlias` is set, this form automatically uses that alias.
 
 ```bash
 node ./bin/ytissue.mjs --json AB-3941
@@ -62,6 +65,10 @@ node ./bin/ytissue.mjs billingo AB-3941
 
 ```bash
 node ./bin/ytissue.mjs -c ./config.test.json -a billingo AB-3941
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json AB-3941
 ```
 
 Or install globally from the repo:

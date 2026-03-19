@@ -203,6 +203,11 @@ function resolveAliasConfig(globalConfig, alias) {
   return aliasConfig;
 }
 
+function resolveDefaultAlias(globalConfig) {
+  const defaultAlias = globalConfig?.defaultAlias;
+  return typeof defaultAlias === 'string' && defaultAlias.trim() ? defaultAlias.trim() : '';
+}
+
 function exitUnknownAlias(alias, globalConfigPath) {
   console.error(`Unknown alias: ${alias}`);
   console.error(`Define it under ${globalConfigPath}`);
@@ -402,10 +407,12 @@ try {
     ? await loadAliasConfigFromPath(options.configPath)
     : await loadGlobalAliasConfig();
   const fileConfig = await loadConfig();
-  const aliasConfig = options.alias ? resolveAliasConfig(globalAliasConfig, options.alias) : null;
+  const defaultAlias = options.alias ? '' : resolveDefaultAlias(globalAliasConfig);
+  const resolvedAlias = options.alias || defaultAlias;
+  const aliasConfig = resolvedAlias ? resolveAliasConfig(globalAliasConfig, resolvedAlias) : null;
 
-  if (options.alias && !aliasConfig) {
-    exitUnknownAlias(options.alias, globalConfigPath);
+  if (resolvedAlias && !aliasConfig) {
+    exitUnknownAlias(resolvedAlias, globalConfigPath);
   }
 
   const token = aliasConfig?.token || process.env.YOUTRACK_TOKEN || fileConfig.YOUTRACK_TOKEN || '';
