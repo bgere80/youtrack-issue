@@ -1,0 +1,22 @@
+{
+  "name": "youtrack-issue",
+  "version": "0.1.0",
+  "description": "Standalone CLI for fetching YouTrack issues by ID",
+  "private": true,
+  "type": "module",
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "bin": {
+    "youtrack-issue": "./bin/ytissue.mjs"
+  },
+  "scripts": {
+    "youtrack-issue": "node ./bin/ytissue.mjs",
+    "check": "node --check ./bin/ytissue.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
