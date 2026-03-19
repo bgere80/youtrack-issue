@@ -17,6 +17,7 @@ Options:
   --comments          Include issue comments
   -a, --alias <name>  Use a configured global alias
   -c, --config <path> Load aliases from a specific JSON config file
+  --list-aliases      List configured aliases and exit
   --base-url <url>    Override YouTrack base URL
   -h, --help          Show this help
 
@@ -34,6 +35,7 @@ function parseArgs(argv) {
     comments: false,
     configPath: '',
     json: false,
+    listAliases: false,
     baseUrl: '',
     issueId: ''
   };
@@ -49,6 +51,11 @@ function parseArgs(argv) {
 
     if (arg === '--comments') {
       options.comments = true;
+      continue;
+    }
+
+    if (arg === '--list-aliases') {
+      options.listAliases = true;
       continue;
     }
 
@@ -230,6 +237,33 @@ function resolveAliasConfig(globalConfig, alias) {
 function resolveDefaultAlias(globalConfig) {
   const defaultAlias = globalConfig?.defaultAlias;
   return typeof defaultAlias === 'string' && defaultAlias.trim() ? defaultAlias.trim() : '';
+}
+
+function getAliasEntries(globalConfig) {
+  const aliases = globalConfig?.aliases;
+  if (!aliases || typeof aliases !== 'object' || Array.isArray(aliases)) {
+    return [];
+  }
+
+  return Object.entries(aliases).filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function printAliases(globalConfig, configPath) {
+  const aliasEntries = getAliasEntries(globalConfig);
+  const defaultAlias = resolveDefaultAlias(globalConfig);
+
+  console.log(`Config: ${configPath}`);
+  if (aliasEntries.length === 0) {
+    console.log('No aliases configured.');
+    return;
+  }
+
+  console.log('Aliases:');
+  for (const [name, config] of aliasEntries) {
+    const marker = name === defaultAlias ? ' (default)' : '';
+    const baseUrl = typeof config.baseUrl === 'string' && config.baseUrl ? config.baseUrl : '-';
+    console.log(`- ${name}${marker}: ${baseUrl}`);
+  }
 }
 
 function exitUnknownAlias(alias, globalConfigPath) {
@@ -419,11 +453,6 @@ try {
   const options = parseArgs(args);
   validateAliasName(options.alias);
 
-  if (!options.issueId) {
-    printUsage();
-    process.exit(1);
-  }
-
   const globalConfigPath = options.configPath
     ? path.resolve(options.configPath)
     : path.join(getConfigDir(), 'config.json');
@@ -431,6 +460,17 @@ try {
     ? await loadAliasConfigFromPath(options.configPath)
     : await loadGlobalAliasConfig();
   const fileConfig = await loadConfig();
+
+  if (options.listAliases) {
+    printAliases(globalAliasConfig, globalConfigPath);
+    process.exit(0);
+  }
+
+  if (!options.issueId) {
+    printUsage();
+    process.exit(1);
+  }
+
   const defaultAlias = options.alias ? '' : resolveDefaultAlias(globalAliasConfig);
   const resolvedAlias = options.alias || defaultAlias;
   const aliasConfig = resolvedAlias ? resolveAliasConfig(globalAliasConfig, resolvedAlias) : null;

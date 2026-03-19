@@ -95,6 +95,14 @@ node ./bin/ytissue.mjs -c ./config.example.json -a work AB-3941
 node ./bin/ytissue.mjs -c ./config.example.json AB-3941
 ```
 
+```bash
+node ./bin/ytissue.mjs --list-aliases
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.example.json --list-aliases
+```
+
 Or install globally from the repo:
 
 ```bash
