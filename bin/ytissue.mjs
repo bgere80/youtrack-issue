@@ -10,27 +10,34 @@ const args = process.argv.slice(2);
 
 function printUsage() {
   console.log(`Usage: youtrack-issue [options] <ISSUE-ID>
+       youtrack-issue [options] <ALIAS> <ISSUE-ID>
 
 Options:
   --json              Print raw JSON response
   --comments          Include issue comments
+  -a, --alias <name>  Use a configured global alias
+  -c, --config <path> Load aliases from a specific JSON config file
   --base-url <url>    Override YouTrack base URL
   -h, --help          Show this help
 
 Config sources:
   1. CLI flags
-  2. Environment variables: YOUTRACK_TOKEN, YOUTRACK_BASE_URL
-  3. .env / .env.local in the current directory
-  4. ~/.config/youtrack-issue/config.env`);
+  2. Global alias config: ~/.config/youtrack-issue/config.json
+  3. Environment variables: YOUTRACK_TOKEN, YOUTRACK_BASE_URL
+  4. .env / .env.local in the current directory
+  5. ~/.config/youtrack-issue/config.env`);
 }
 
 function parseArgs(argv) {
   const options = {
+    alias: '',
     comments: false,
+    configPath: '',
     json: false,
     baseUrl: '',
     issueId: ''
   };
+  const positionals = [];
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -42,6 +49,30 @@ function parseArgs(argv) {
 
     if (arg === '--comments') {
       options.comments = true;
+      continue;
+    }
+
+    if (arg === '--alias' || arg === '-a') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --alias.');
+        process.exit(1);
+      }
+
+      options.alias = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--config' || arg === '-c') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --config.');
+        process.exit(1);
+      }
+
+      options.configPath = value;
+      index += 1;
       continue;
     }
 
@@ -68,16 +99,126 @@ function parseArgs(argv) {
       process.exit(1);
     }
 
-    if (options.issueId) {
-      console.error('Only one issue ID can be provided.');
-      printUsage();
-      process.exit(1);
-    }
+    positionals.push(arg);
+  }
 
-    options.issueId = arg;
+  if (positionals.length === 1) {
+    options.issueId = positionals[0];
+    return options;
+  }
+
+  if (positionals.length === 2 && !options.alias) {
+    [options.alias, options.issueId] = positionals;
+    return options;
+  }
+
+  if (positionals.length === 1 && options.alias) {
+    options.issueId = positionals[0];
+    return options;
+  }
+
+  if (positionals.length === 2 && options.alias) {
+    console.error('Issue ID can only be provided once when --alias is used.');
+    printUsage();
+    process.exit(1);
+  }
+
+  if (positionals.length > 2) {
+    console.error('Too many positional arguments.');
+    printUsage();
+    process.exit(1);
+  }
+
+  if (positionals.length === 0) {
+    return options;
+  }
+
+  if (options.issueId) {
+    console.error('Only one issue ID can be provided.');
+    printUsage();
+    process.exit(1);
+  }
+
+  if (positionals.length > 0) {
+    console.error('Invalid arguments.');
+    printUsage();
+    process.exit(1);
   }
 
   return options;
+}
+
+async function readTextFileIfExists(filePath) {
+  try {
+    return await readFile(filePath, 'utf8');
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function loadJsonFile(filePath) {
+  const content = await readTextFileIfExists(filePath);
+  if (content == null) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    throw new Error(`Invalid JSON in ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+function getConfigDir() {
+  return path.join(os.homedir(), '.config', 'youtrack-issue');
+}
+
+async function loadGlobalAliasConfig() {
+  return loadJsonFile(path.join(getConfigDir(), 'config.json'));
+}
+
+async function loadAliasConfigFromPath(configPath) {
+  return loadJsonFile(path.resolve(configPath));
+}
+
+function resolveAliasConfig(globalConfig, alias) {
+  if (!alias) {
+    return null;
+  }
+
+  const aliases = globalConfig?.aliases;
+  if (!aliases || typeof aliases !== 'object' || Array.isArray(aliases)) {
+    return null;
+  }
+
+  const aliasConfig = aliases[alias];
+  if (!aliasConfig || typeof aliasConfig !== 'object' || Array.isArray(aliasConfig)) {
+    return null;
+  }
+
+  return aliasConfig;
+}
+
+function exitUnknownAlias(alias, globalConfigPath) {
+  console.error(`Unknown alias: ${alias}`);
+  console.error(`Define it under ${globalConfigPath}`);
+  process.exit(1);
+}
+
+function validateAliasName(alias) {
+  if (!alias) {
+    return;
+  }
+
+  if (alias.startsWith('-')) {
+    console.error(`Invalid alias: ${alias}`);
+    printUsage();
+    process.exit(1);
+  }
 }
 
 function stripWrappingQuotes(value) {
@@ -120,20 +261,15 @@ async function loadConfig() {
   const fileConfigs = [
     path.join(process.cwd(), '.env'),
     path.join(process.cwd(), '.env.local'),
-    path.join(os.homedir(), '.config', 'youtrack-issue', 'config.env')
+    path.join(getConfigDir(), 'config.env')
   ];
 
   const config = {};
 
   for (const filePath of fileConfigs) {
-    try {
-      const content = await readFile(filePath, 'utf8');
+    const content = await readTextFileIfExists(filePath);
+    if (content != null) {
       Object.assign(config, parseEnvFile(content));
-    } catch (error) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-        continue;
-      }
-      throw error;
     }
   }
 
@@ -252,18 +388,31 @@ async function loadComments(url, token) {
 
 try {
   const options = parseArgs(args);
+  validateAliasName(options.alias);
 
   if (!options.issueId) {
     printUsage();
     process.exit(1);
   }
 
+  const globalConfigPath = options.configPath
+    ? path.resolve(options.configPath)
+    : path.join(getConfigDir(), 'config.json');
+  const globalAliasConfig = options.configPath
+    ? await loadAliasConfigFromPath(options.configPath)
+    : await loadGlobalAliasConfig();
   const fileConfig = await loadConfig();
-  const token = process.env.YOUTRACK_TOKEN || fileConfig.YOUTRACK_TOKEN || '';
-  const baseUrl = options.baseUrl || process.env.YOUTRACK_BASE_URL || fileConfig.YOUTRACK_BASE_URL || DEFAULT_BASE_URL;
+  const aliasConfig = options.alias ? resolveAliasConfig(globalAliasConfig, options.alias) : null;
+
+  if (options.alias && !aliasConfig) {
+    exitUnknownAlias(options.alias, globalConfigPath);
+  }
+
+  const token = aliasConfig?.token || process.env.YOUTRACK_TOKEN || fileConfig.YOUTRACK_TOKEN || '';
+  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YOUTRACK_BASE_URL || fileConfig.YOUTRACK_BASE_URL || DEFAULT_BASE_URL;
 
   if (!token) {
-    console.error('Missing YOUTRACK_TOKEN. Set it via env var or config file.');
+    console.error('Missing YOUTRACK_TOKEN. Set it via alias config, env var, or config file.');
     process.exit(1);
   }
 
