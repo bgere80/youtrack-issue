@@ -216,12 +216,20 @@ function getCustomFieldValue(issue, fieldName) {
 function formatLink(link) {
   const label = link.linkType?.localizedName || link.linkType?.name || 'Link';
   const direction = link.direction ? ` (${link.direction})` : '';
-  const issues = Array.isArray(link.issues)
-    ? link.issues.map((linkedIssue) => `${linkedIssue.idReadable}: ${linkedIssue.summary || '-'}`).join('; ')
-    : '-';
+  const issueItems = Array.isArray(link.issues)
+    ? link.issues
+        .filter((linkedIssue) => linkedIssue?.idReadable)
+        .map((linkedIssue) => `${linkedIssue.idReadable}: ${linkedIssue.summary || '-'}`)
+    : [];
 
-  return `${label}${direction}: ${issues}`;
+  if (issueItems.length === 0) {
+    return null;
+  }
+
+  return `${label}${direction}: ${issueItems.join('; ')}`;
 }
+
+const HEADER_FIELD_NAMES = new Set(['Assignee', 'Type', 'State', 'Prio']);
 
 async function loadComments(url, token) {
   const commentsUrl = new URL(`${url.toString()}/comments`);
@@ -307,18 +315,28 @@ try {
   }
 
   if (Array.isArray(issue.customFields) && issue.customFields.length > 0) {
-    console.log('');
-    console.log('Fields:');
-    for (const field of issue.customFields) {
-      console.log(`- ${field.name}: ${formatFieldValue(field.value)}`);
+    const visibleFields = issue.customFields.filter((field) => !HEADER_FIELD_NAMES.has(field.name));
+
+    if (visibleFields.length > 0) {
+      console.log('');
+      console.log('Fields:');
+      for (const field of visibleFields) {
+        console.log(`- ${field.name}: ${formatFieldValue(field.value)}`);
+      }
     }
   }
 
   if (Array.isArray(issue.links) && issue.links.length > 0) {
-    console.log('');
-    console.log('Links:');
-    for (const link of issue.links) {
-      console.log(`- ${formatLink(link)}`);
+    const visibleLinks = issue.links
+      .map(formatLink)
+      .filter(Boolean);
+
+    if (visibleLinks.length > 0) {
+      console.log('');
+      console.log('Links:');
+      for (const link of visibleLinks) {
+        console.log(`- ${link}`);
+      }
     }
   }
 
