@@ -428,9 +428,7 @@ Examples:
 
 Behavior:
 - text mode filters out empty link groups
-- json mode currently returns the full raw `issue.links` array
-
-This mismatch is intentional for now only because it has not yet been cleaned up.
+- json mode returns the same filtered link groups, with empty groups removed
 
 ## Config Management Commands
 
@@ -495,15 +493,7 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ## Known Gaps / Open Items
 
-### 1. `--linked-issues --json` cleanup
-
-Text mode already removes empty link groups.
-
-JSON mode still returns raw empty groups too.
-
-This is the clearest small cleanup left in the current linked-issues implementation.
-
-### 2. Projects listing
+### 1. Projects listing
 
 Still not implemented.
 
@@ -512,7 +502,7 @@ This was discussed as a good next read-only feature.
 Likely shape:
 - `--projects`
 
-### 3. Attachments
+### 2. Attachments
 
 Still not implemented.
 
@@ -520,7 +510,7 @@ Likely staged approach:
 1. attachment metadata view
 2. only later, if needed, explicit binary download support
 
-### 4. Request timeout / abort handling
+### 3. Request timeout / abort handling
 
 Still not implemented.
 
@@ -536,10 +526,9 @@ README is functional and current enough for use, but can still be tightened:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. clean up `--linked-issues --json` to filter empty groups too
-2. add `--projects`
-3. add attachment metadata view
-4. add timeout / abort handling
+1. add `--projects`
+2. add attachment metadata view
+3. add timeout / abort handling
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope

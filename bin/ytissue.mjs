@@ -829,12 +829,31 @@ function formatLink(link) {
   return `${label}${direction}: ${issueItems.join('; ')}`;
 }
 
-function getVisibleLinks(issue) {
+function getVisibleLinkGroups(issue) {
   if (!Array.isArray(issue.links)) {
     return [];
   }
 
   return issue.links
+    .map((link) => {
+      const issues = Array.isArray(link.issues)
+        ? link.issues.filter((linkedIssue) => linkedIssue?.idReadable)
+        : [];
+
+      if (issues.length === 0) {
+        return null;
+      }
+
+      return {
+        ...link,
+        issues
+      };
+    })
+    .filter(Boolean);
+}
+
+function getVisibleLinks(issue) {
+  return getVisibleLinkGroups(issue)
     .map(formatLink)
     .filter(Boolean);
 }
@@ -1060,7 +1079,7 @@ try {
     const payload = options.commentsOnly
       ? comments
       : options.linkedIssues
-        ? (issue.links || [])
+        ? getVisibleLinkGroups(issue)
       : options.spentTime
         ? { spentTime: getSpentTime(issue) }
       : options.workItems
