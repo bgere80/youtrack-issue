@@ -2,6 +2,8 @@
 
 Minimal standalone YouTrack issue CLI with global alias config support.
 
+Contributing notes: see `CONTRIBUTING.md`.
+
 ## Setup
 
 ```bash
