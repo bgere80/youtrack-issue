@@ -68,7 +68,7 @@ YTISSUE_WORK_TOKEN=perm-...
 There is also a repo example at `config.example.json`.
 
 ```bash
-YTISSUE_CONFIG=./config.example.json ytissue --list-aliases
+YTISSUE_CONFIG=./config.example.json ytissue config list-aliases
 ```
 
 ## Usage
@@ -140,23 +140,31 @@ node ./bin/ytissue.mjs -a work --search "project: AB" --limit 20
 ```
 
 ```bash
-node ./bin/ytissue.mjs --list-aliases
+node ./bin/ytissue.mjs -lbn 20
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.example.json --list-aliases
+node ./bin/ytissue.mjs -bs "project: AB" -n 20
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json --add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
+node ./bin/ytissue.mjs config list-aliases
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json --set-default work
+node ./bin/ytissue.mjs -c ./config.example.json config list-aliases
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json --remove-alias work
+node ./bin/ytissue.mjs -c ./config.test.json config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json config set-default work
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json config remove-alias work
 ```
 
 Or install globally from the repo:

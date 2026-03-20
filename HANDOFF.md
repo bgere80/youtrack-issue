@@ -53,6 +53,7 @@ The CLI supports:
 - a default alias
 - env vars
 - direct overrides via flags
+- config management via the `config` subcommand
 
 Config path precedence:
 1. `--config`
@@ -114,6 +115,39 @@ Final decision:
 Reason:
 - avoids conflicts with alias names like `list`
 - keeps the CLI consistently flag-oriented
+
+### Config command UX
+
+Config management now lives under a dedicated subcommand:
+- `ytissue config list-aliases`
+- `ytissue config add-alias ...`
+- `ytissue config set-default ...`
+- `ytissue config remove-alias ...`
+
+Reason:
+- keeps read/query flows separate from config mutation
+- makes help output easier to scan
+- fits the current Commander-based CLI model better
+
+`-c, --config <path>` remains a global option and applies before the subcommand.
+
+### Short flags
+
+Frequently used read/query options now have short aliases:
+- `-a` for `--alias`
+- `-b` for `--brief`
+- `-c` for `--config`
+- `-h` for `--help`
+- `-j` for `--json`
+- `-l` for `--list`
+- `-n` for `--limit`
+- `-s` for `--search`
+
+Boolean short flags can be grouped, and a grouped sequence may end with one short option that takes a value.
+
+Examples:
+- `ytissue -lbn 20`
+- `ytissue -bs "project: AB" -n 20`
 
 ### Output philosophy
 
@@ -433,16 +467,16 @@ Behavior:
 ## Config Management Commands
 
 Examples:
-- `ytissue --list-aliases`
-- `ytissue --add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default`
-- `ytissue --set-default work`
-- `ytissue --remove-alias work`
+- `ytissue config list-aliases`
+- `ytissue config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default`
+- `ytissue config set-default work`
+- `ytissue config remove-alias work`
 
 Notes:
 - config writing preserves placeholder values like `${YTISSUE_WORK_TOKEN}`
 - `--set-default` works in two forms:
-  - with `--add-alias ... --set-default`
-  - standalone as `--set-default <alias>`
+  - with `config add-alias ... --set-default`
+  - standalone as `config set-default <alias>`
 
 ## Officially Useful Example Commands
 
@@ -457,8 +491,11 @@ ytissue --search "project: AB" --limit 20
 ytissue --search "project: AB" --brief
 ytissue --list --limit 20
 
-ytissue --list-aliases
-ytissue --config ./config.example.json --list-aliases
+ytissue -bs "project: AB" -n 20
+ytissue -lbn 20
+
+ytissue config list-aliases
+ytissue --config ./config.example.json config list-aliases
 ```
 
 ## Real-World Validation Notes
@@ -520,7 +557,6 @@ At the moment network calls rely on default `fetch` behavior without explicit ti
 
 README is functional and current enough for use, but can still be tightened:
 - remove any low-value development detail
-- align examples around the strongest workflows
 - possibly document which outputs are raw vs filtered
 
 ## Practical Guidance For The Next Thread

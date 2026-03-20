@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { configPath, expectSuccess, runCli } from './helpers.mjs';
+import { configPath, expectFailure, expectSuccess, runCli } from './helpers.mjs';
 
 describe('ytissue CLI config commands', () => {
   it('config mutation commands work on a temp copy of config.test.json', async () => {
@@ -17,7 +17,8 @@ describe('ytissue CLI config commands', () => {
       const addAliasResult = await runCli([
         '-c',
         tempConfigPath,
-        '--add-alias',
+        'config',
+        'add-alias',
         'temp',
         '--base-url',
         'https://youtrack.example.com',
@@ -32,13 +33,13 @@ describe('ytissue CLI config commands', () => {
       expect(saved.aliases.temp.baseUrl).toBe('https://youtrack.example.com');
       expect(saved.aliases.temp.token).toBe('${YTISSUE_TEMP_TOKEN}');
 
-      const setDefaultResult = await runCli(['-c', tempConfigPath, '--set-default', 'billingo']);
+      const setDefaultResult = await runCli(['-c', tempConfigPath, 'config', 'set-default', 'billingo']);
       expectSuccess(setDefaultResult);
 
       saved = JSON.parse(await readFile(tempConfigPath, 'utf8'));
       expect(saved.defaultAlias).toBe('billingo');
 
-      const removeResult = await runCli(['-c', tempConfigPath, '--remove-alias', 'temp']);
+      const removeResult = await runCli(['-c', tempConfigPath, 'config', 'remove-alias', 'temp']);
       expectSuccess(removeResult);
 
       saved = JSON.parse(await readFile(tempConfigPath, 'utf8'));
@@ -46,5 +47,11 @@ describe('ytissue CLI config commands', () => {
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it('lists aliases through the config subcommand', async () => {
+    const result = await runCli(['-c', configPath, 'config', 'list-aliases']);
+    expectSuccess(result);
+    expect(result.stdout).toMatch(/billingo \(default\): https:\/\/youtrack\.billingo\.com/);
   });
 });

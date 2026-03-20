@@ -60,24 +60,31 @@ try {
   const defaultConfigPath = `${getConfigDir()}/config.json`;
   const globalConfigPath = resolveAliasConfigPath(options, fileConfig);
 
-  if (options.addAlias) {
-    await addAliasToConfig(globalConfigPath, options);
-    process.exit(0);
-  }
-
-  if (options.setDefaultAlias) {
-    await setDefaultAliasInConfig(globalConfigPath, options);
-    process.exit(0);
-  }
-
-  if (options.removeAlias) {
-    await removeAliasFromConfig(globalConfigPath, options);
-    process.exit(0);
-  }
-
   const globalAliasConfig = globalConfigPath === defaultConfigPath
     ? await loadGlobalAliasConfig()
     : await loadAliasConfigFromPath(globalConfigPath);
+
+  if (options.mode === 'config') {
+    if (options.addAlias) {
+      await addAliasToConfig(globalConfigPath, options);
+      process.exit(0);
+    }
+
+    if (options.setDefaultAlias) {
+      await setDefaultAliasInConfig(globalConfigPath, options);
+      process.exit(0);
+    }
+
+    if (options.removeAlias) {
+      await removeAliasFromConfig(globalConfigPath, options);
+      process.exit(0);
+    }
+
+    if (options.listAliases) {
+      printAliases(globalAliasConfig, globalConfigPath);
+      process.exit(0);
+    }
+  }
 
   if (options.listAliases) {
     printAliases(globalAliasConfig, globalConfigPath);

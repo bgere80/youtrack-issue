@@ -19,7 +19,7 @@ describe('ytissue CLI help and validation', () => {
   });
 
   it('lists aliases from config.test.json', async () => {
-    const result = await runCli(['-c', configPath, '--list-aliases']);
+    const result = await runCli(['-c', configPath, 'config', 'list-aliases']);
     expectSuccess(result);
     expect(result.stdout).toMatch(/Config: .*config\.test\.json/);
     expect(result.stdout).toMatch(/billingo \(default\): https:\/\/youtrack\.billingo\.com/);
