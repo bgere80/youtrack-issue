@@ -5,27 +5,27 @@ Minimal standalone YouTrack issue CLI.
 ## Setup
 
 ```bash
-export YOUTRACK_TOKEN="perm-..."
+export YTISSUE_TOKEN="perm-..."
 ```
 
 Optional:
 
 ```bash
-export YOUTRACK_BASE_URL="https://youtrack.billingo.com"
+export YTISSUE_BASE_URL="https://youtrack.billingo.com"
 ```
 
 Or use a local config file:
 
 ```bash
 cat > .env.local <<'EOF'
-YOUTRACK_TOKEN=perm-...
-YOUTRACK_BASE_URL=https://youtrack.billingo.com
+YTISSUE_TOKEN=perm-...
+YTISSUE_BASE_URL=https://youtrack.billingo.com
 EOF
 ```
 
 The CLI also reads `~/.config/youtrack-issue/config.env`.
 
-The alias config path can also be set with `YOUTRACK_CONFIG`.
+The alias config path can also be set with `YTISSUE_CONFIG`.
 
 When invoked as a global command (`ytissue` / `youtrack-issue`), the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
 
@@ -47,11 +47,11 @@ Any string value in the JSON config can also use an environment variable referen
 
 ```json
 {
-  "defaultAlias": "${YOUTRACK_DEFAULT_ALIAS}",
+  "defaultAlias": "${YTISSUE_DEFAULT_ALIAS}",
   "aliases": {
     "work": {
-      "baseUrl": "${YOUTRACK_WORK_BASE_URL}",
-      "token": "${YOUTRACK_WORK_TOKEN}"
+      "baseUrl": "${YTISSUE_WORK_BASE_URL}",
+      "token": "${YTISSUE_WORK_TOKEN}"
     }
   }
 }
@@ -60,15 +60,15 @@ Any string value in the JSON config can also use an environment variable referen
 Example environment:
 
 ```bash
-YOUTRACK_DEFAULT_ALIAS=work
-YOUTRACK_WORK_BASE_URL=https://youtrack.example.com
-YOUTRACK_WORK_TOKEN=perm-...
+YTISSUE_DEFAULT_ALIAS=work
+YTISSUE_WORK_BASE_URL=https://youtrack.example.com
+YTISSUE_WORK_TOKEN=perm-...
 ```
 
 There is also a repo example at `config.example.json`.
 
 ```bash
-YOUTRACK_CONFIG=./config.example.json ytissue --list-aliases
+YTISSUE_CONFIG=./config.example.json ytissue --list-aliases
 ```
 
 ## Usage

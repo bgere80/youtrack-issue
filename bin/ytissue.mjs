@@ -37,8 +37,8 @@ Options:
 
 Config sources:
   1. CLI flags
-  2. Config path: --config, YOUTRACK_CONFIG, ~/.config/youtrack-issue/config.json
-  3. Environment variables: YOUTRACK_TOKEN, YOUTRACK_BASE_URL
+  2. Config path: --config, YTISSUE_CONFIG, ~/.config/youtrack-issue/config.json
+  3. Environment variables: YTISSUE_TOKEN, YTISSUE_BASE_URL
   4. ~/.config/youtrack-issue/config.env`);
 }
 
@@ -390,12 +390,12 @@ function resolveAliasConfigPath(options, fileConfig = {}) {
     return path.resolve(options.configPath);
   }
 
-  if (process.env.YOUTRACK_CONFIG) {
-    return path.resolve(process.env.YOUTRACK_CONFIG);
+  if (process.env.YTISSUE_CONFIG) {
+    return path.resolve(process.env.YTISSUE_CONFIG);
   }
 
-  if (fileConfig.YOUTRACK_CONFIG) {
-    return path.resolve(fileConfig.YOUTRACK_CONFIG);
+  if (fileConfig.YTISSUE_CONFIG) {
+    return path.resolve(fileConfig.YTISSUE_CONFIG);
   }
 
   return path.join(getConfigDir(), 'config.json');
@@ -965,11 +965,11 @@ try {
     exitUnknownAlias(resolvedAlias, globalConfigPath);
   }
 
-  const token = aliasConfig?.token || process.env.YOUTRACK_TOKEN || fileConfig.YOUTRACK_TOKEN || '';
-  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YOUTRACK_BASE_URL || fileConfig.YOUTRACK_BASE_URL || DEFAULT_BASE_URL;
+  const token = aliasConfig?.token || process.env.YTISSUE_TOKEN || fileConfig.YTISSUE_TOKEN || '';
+  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YTISSUE_BASE_URL || fileConfig.YTISSUE_BASE_URL || DEFAULT_BASE_URL;
 
   if (!token) {
-    console.error('Missing YOUTRACK_TOKEN. Set it via alias config, env var, or config file.');
+    console.error('Missing YTISSUE_TOKEN. Set it via alias config, env var, or config file.');
     process.exit(1);
   }
 
