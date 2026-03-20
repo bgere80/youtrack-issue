@@ -17,6 +17,8 @@ Options:
   --json              Print raw JSON response
   --comments          Include issue comments
   --comments-only     Print only issue comments
+  --spent-time        Print only issue spent time
+  --work-items        Print only issue work items
   -a, --alias <name>  Use a configured global alias
   --add-alias <name>  Add or update an alias in the config file
   -c, --config <path> Load aliases from a specific JSON config file
@@ -70,7 +72,9 @@ function parseArgs(argv) {
     issueId: '',
     setDefaultAlias: '',
     setDefaultRequested: false,
-    token: ''
+    spentTime: false,
+    token: '',
+    workItems: false
   };
   const positionals = [];
 
@@ -94,6 +98,16 @@ function parseArgs(argv) {
 
     if (arg === '--comments-only') {
       options.commentsOnly = true;
+      continue;
+    }
+
+    if (arg === '--spent-time') {
+      options.spentTime = true;
+      continue;
+    }
+
+    if (arg === '--work-items') {
+      options.workItems = true;
       continue;
     }
 
@@ -487,13 +501,23 @@ function validateQueryOptions(options) {
     process.exit(1);
   }
 
-  if ((options.command === 'list' || options.command === 'search') && (options.comments || options.commentsOnly)) {
-    console.error('--comments and --comments-only are only supported for single-issue lookup.');
+  if ((options.command === 'list' || options.command === 'search') && (options.comments || options.commentsOnly || options.spentTime || options.workItems)) {
+    console.error('--comments, --comments-only, --spent-time, and --work-items are only supported for single-issue lookup.');
     process.exit(1);
   }
 
   if (options.comments && options.commentsOnly) {
     console.error('Use only one of --comments or --comments-only.');
+    process.exit(1);
+  }
+
+  if ((options.comments || options.commentsOnly) && (options.spentTime || options.workItems)) {
+    console.error('Use only one of --comments, --comments-only, --spent-time, or --work-items.');
+    process.exit(1);
+  }
+
+  if (options.spentTime && options.workItems) {
+    console.error('Use only one of --spent-time or --work-items.');
     process.exit(1);
   }
 }
@@ -829,6 +853,50 @@ async function loadComments(baseUrl, issueId, token) {
   return response.json();
 }
 
+async function loadWorkItems(baseUrl, issueId, token) {
+  const workItemsUrl = new URL(`${baseUrl.replace(/\/+$/, '')}/api/issues/${encodeURIComponent(issueId)}/timeTracking/workItems`);
+  workItemsUrl.searchParams.set(
+    'fields',
+    'author(login,name,fullName),creator(login,name,fullName),date,duration(minutes,presentation),text,type(name),created,updated'
+  );
+
+  const response = await fetch(workItemsUrl, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Work items request failed: ${response.status} ${response.statusText}${text ? `\n${text}` : ''}`);
+  }
+
+  return response.json();
+}
+
+function formatDuration(duration) {
+  if (!duration) {
+    return '-';
+  }
+
+  return duration.presentation || (duration.minutes != null ? `${duration.minutes}m` : '-');
+}
+
+function formatWorkItem(workItem) {
+  const date = formatDate(workItem.date);
+  const author = formatUser(workItem.author);
+  const type = workItem.type?.name || '-';
+  const duration = formatDuration(workItem.duration);
+  const text = workItem.text || '-';
+
+  return `${date} | ${author} | ${type} | ${duration}\n  ${text}`;
+}
+
+function getSpentTime(issue) {
+  return getCustomFieldValue(issue, 'Spent time');
+}
+
 try {
   const options = parseArgs(args);
   validateAliasName(options.alias);
@@ -962,8 +1030,19 @@ try {
     comments = await loadComments(baseUrl, options.issueId, token);
   }
 
+  let workItems = [];
+  if (options.workItems) {
+    workItems = await loadWorkItems(baseUrl, options.issueId, token);
+  }
+
   if (options.json) {
-    const payload = options.commentsOnly ? comments : (options.comments ? { issue, comments } : issue);
+    const payload = options.commentsOnly
+      ? comments
+      : options.spentTime
+        ? { spentTime: getSpentTime(issue) }
+      : options.workItems
+        ? workItems
+        : (options.comments ? { issue, comments } : issue);
     console.log(JSON.stringify(payload, null, 2));
     process.exit(0);
   }
@@ -980,6 +1059,25 @@ try {
       console.log(`- ${formatUser(comment.author)} @ ${formatDate(comment.created)}`);
       console.log(comment.text || '-');
     }
+    process.exit(0);
+  }
+
+  if (options.workItems) {
+    if (!Array.isArray(workItems) || workItems.length === 0) {
+      console.log('No work items.');
+      process.exit(0);
+    }
+
+    console.log(`Work items: ${workItems.length}`);
+    for (const workItem of workItems) {
+      console.log('');
+      console.log(formatWorkItem(workItem));
+    }
+    process.exit(0);
+  }
+
+  if (options.spentTime) {
+    console.log(getSpentTime(issue));
     process.exit(0);
   }
 
