@@ -112,6 +112,10 @@ node ./bin/ytissue.mjs --search "for: me #Unresolved"
 ```
 
 ```bash
+node ./bin/ytissue.mjs --search "project: AB" --brief
+```
+
+```bash
 node ./bin/ytissue.mjs -a work --list --limit 20
 ```
 

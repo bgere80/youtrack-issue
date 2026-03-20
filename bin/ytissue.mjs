@@ -13,6 +13,7 @@ function printUsage() {
        youtrack-issue [options] <ALIAS> <ISSUE-ID>
 
 Options:
+  --brief             Compact output for list/search results
   --json              Print raw JSON response
   --comments          Include issue comments
   -a, --alias <name>  Use a configured global alias
@@ -52,6 +53,7 @@ function parseArgs(argv) {
   const options = {
     addAlias: '',
     alias: '',
+    brief: false,
     comments: false,
     command: 'issue',
     configPath: '',
@@ -75,6 +77,11 @@ function parseArgs(argv) {
 
     if (arg === '--json') {
       options.json = true;
+      continue;
+    }
+
+    if (arg === '--brief') {
+      options.brief = true;
       continue;
     }
 
@@ -635,12 +642,33 @@ const listFields = [
   'customFields(name,value(name,login,fullName,text,presentation,minutes))'
 ].join(',');
 
+const ANSI = {
+  reset: '\u001B[0m',
+  green: '\u001B[32m',
+  yellow: '\u001B[33m',
+  blue: '\u001B[34m',
+  red: '\u001B[31m',
+  gray: '\u001B[90m'
+};
+
 function formatDate(value) {
   if (!value) {
     return '-';
   }
 
   return new Date(value).toISOString();
+}
+
+function supportsColor() {
+  return Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+}
+
+function colorize(text, color) {
+  if (!supportsColor() || !color) {
+    return text;
+  }
+
+  return `${color}${text}${ANSI.reset}`;
 }
 
 function formatUser(user) {
@@ -693,6 +721,51 @@ function getCustomFieldValue(issue, fieldName) {
   return field ? formatFieldValue(field.value) : '-';
 }
 
+function getIssueState(issue) {
+  return getCustomFieldValue(issue, 'State');
+}
+
+function getStateColor(state) {
+  const normalized = String(state || '').toLowerCase();
+
+  if (!normalized || normalized === '-') {
+    return '';
+  }
+
+  if (
+    normalized.includes('done') ||
+    normalized.includes('resolved') ||
+    normalized.includes('closed') ||
+    normalized.includes('kész')
+  ) {
+    return ANSI.green;
+  }
+
+  if (normalized.includes('block')) {
+    return ANSI.red;
+  }
+
+  if (
+    normalized.includes('review') ||
+    normalized.includes('waiting') ||
+    normalized.includes('progress') ||
+    normalized.includes('folyamat')
+  ) {
+    return ANSI.yellow;
+  }
+
+  if (
+    normalized.includes('todo') ||
+    normalized.includes('open') ||
+    normalized.includes('backlog') ||
+    normalized.includes('előkész')
+  ) {
+    return ANSI.gray;
+  }
+
+  return ANSI.blue;
+}
+
 function formatLink(link) {
   const label = link.linkType?.localizedName || link.linkType?.name || 'Link';
   const direction = link.direction ? ` (${link.direction})` : '';
@@ -712,12 +785,17 @@ function formatLink(link) {
 const HEADER_FIELD_NAMES = new Set(['Assignee', 'Type', 'State', 'Prio']);
 
 function formatListIssue(issue) {
-  const state = getCustomFieldValue(issue, 'State');
+  const state = getIssueState(issue);
   const prio = getCustomFieldValue(issue, 'Prio');
   const assignee = resolveAssignee(issue);
   const updated = formatDate(issue.updated);
+  const text = `${issue.idReadable} | ${state} | ${prio} | ${assignee} | ${updated}\n  ${issue.summary || '-'}`;
+  return colorize(text, getStateColor(state));
+}
 
-  return `${issue.idReadable} | ${state} | ${prio} | ${assignee} | ${updated}\n  ${issue.summary || '-'}`;
+function formatBriefListIssue(issue) {
+  const text = `${issue.idReadable}  ${issue.summary || '-'}`;
+  return colorize(text, getStateColor(getIssueState(issue)));
 }
 
 async function loadComments(url, token) {
@@ -827,6 +905,13 @@ try {
 
     if (!Array.isArray(issues) || issues.length === 0) {
       console.log('No issues found.');
+      process.exit(0);
+    }
+
+    if (options.brief) {
+      for (const issue of issues) {
+        console.log(formatBriefListIssue(issue));
+      }
       process.exit(0);
     }
 
