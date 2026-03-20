@@ -479,6 +479,22 @@ Behavior:
 - repeated `--field` is supported
 - `--json` with `--field` returns an object keyed by field name
 
+### Attachments mode
+
+Examples:
+- `ytissue AB-3941 --attachments`
+- `ytissue AB-3941 --attachments --json`
+- `ytissue AB-3941 --download-attachment invoice.pdf`
+
+Behavior:
+- `--attachments` hits `GET /api/issues/{issueID}/attachments`
+- default text mode prints attachment id, size, MIME type, author, and created timestamp
+- `--brief`: `ID  FileName`
+- `--json`: raw attachment array
+- `--download-attachment <id-or-name>` downloads the matching attachment into the current working directory
+- download matching accepts an exact attachment ID or exact file name
+- download refuses ambiguous name matches
+
 ### Projects mode
 
 Examples:
@@ -560,21 +576,13 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ## Known Gaps / Open Items
 
-### 1. Attachments
-
-Still not implemented.
-
-Likely staged approach:
-1. attachment metadata view
-2. only later, if needed, explicit binary download support
-
-### 2. Request timeout / abort handling
+### 1. Request timeout / abort handling
 
 Still not implemented.
 
 At the moment network calls rely on default `fetch` behavior without explicit timeouts.
 
-### 3. Documentation cleanup
+### 2. Documentation cleanup
 
 README is functional and current enough for use, but can still be tightened:
 - remove any low-value development detail
@@ -583,9 +591,9 @@ README is functional and current enough for use, but can still be tightened:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. add attachment metadata view
-2. add timeout / abort handling
-3. tighten README output-mode documentation
+1. add timeout / abort handling
+2. tighten README output-mode documentation
+3. consider higher-level history/activity views
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope

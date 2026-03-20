@@ -104,6 +104,14 @@ node ./bin/ytissue.mjs --work-items AB-3941
 ```
 
 ```bash
+node ./bin/ytissue.mjs AB-3941 --attachments
+```
+
+```bash
+node ./bin/ytissue.mjs AB-3941 --download-attachment invoice.pdf
+```
+
+```bash
 node ./bin/ytissue.mjs AB-3941 --fields
 ```
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import process from 'node:process';
 
 import {
@@ -29,7 +31,9 @@ import {
   fetchIssues,
   fetchProjects,
   formatBriefListIssue,
+  formatBriefAttachment,
   formatBriefProject,
+  formatAttachment,
   formatDate,
   formatFieldValue,
   formatListIssue,
@@ -39,6 +43,9 @@ import {
   getCustomFieldValue,
   listAvailableIssueFields,
   resolveIssueFields,
+  loadAttachments,
+  resolveAttachment,
+  downloadAttachment,
   getSpentTime,
   getVisibleLinkGroups,
   getVisibleLinks,
@@ -172,6 +179,64 @@ try {
       console.log(formatListIssue(issue));
     }
 
+    process.exit(0);
+  }
+
+  let attachments = [];
+  if (options.attachments || options.downloadAttachment) {
+    attachments = await loadAttachments(baseUrl, options.issueId, token);
+  }
+
+  if (options.command === 'attachments') {
+    if (options.downloadAttachment) {
+      const { attachment, error } = resolveAttachment(attachments, options.downloadAttachment);
+      if (!attachment) {
+        console.error(error);
+        process.exit(1);
+      }
+
+      const targetFileName = path.basename(attachment.name || attachment.id || 'attachment.bin');
+      const targetPath = path.resolve(process.cwd(), targetFileName);
+      const { content, url } = await downloadAttachment(baseUrl, attachment, token);
+      await writeFile(targetPath, content, { flag: 'wx' });
+
+      if (options.json) {
+        console.log(JSON.stringify({
+          attachmentId: attachment.id,
+          fileName: targetFileName,
+          path: targetPath,
+          url
+        }, null, 2));
+        process.exit(0);
+      }
+
+      console.log(`Downloaded ${targetFileName}`);
+      console.log(targetPath);
+      process.exit(0);
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify(attachments, null, 2));
+      process.exit(0);
+    }
+
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+      console.log('No attachments.');
+      process.exit(0);
+    }
+
+    if (options.brief) {
+      for (const attachment of attachments) {
+        console.log(formatBriefAttachment(attachment));
+      }
+      process.exit(0);
+    }
+
+    console.log(`Attachments: ${attachments.length}`);
+    for (const attachment of attachments) {
+      console.log('');
+      console.log(formatAttachment(attachment));
+    }
     process.exit(0);
   }
 
