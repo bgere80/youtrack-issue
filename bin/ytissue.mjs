@@ -35,6 +35,16 @@ Config sources:
   5. ~/.config/youtrack-issue/config.env`);
 }
 
+function isDirectNodeScriptInvocation() {
+  const scriptArg = process.argv[1] || '';
+  if (!scriptArg) {
+    return false;
+  }
+
+  const normalized = path.normalize(scriptArg);
+  return normalized.endsWith(path.normalize('/bin/ytissue.mjs'));
+}
+
 function parseArgs(argv) {
   const options = {
     addAlias: '',
@@ -509,11 +519,16 @@ function parseEnvFile(content) {
 }
 
 async function loadConfig() {
-  const fileConfigs = [
-    path.join(process.cwd(), '.env'),
-    path.join(process.cwd(), '.env.local'),
-    path.join(getConfigDir(), 'config.env')
-  ];
+  const fileConfigs = [];
+
+  if (isDirectNodeScriptInvocation()) {
+    fileConfigs.push(
+      path.join(process.cwd(), '.env'),
+      path.join(process.cwd(), '.env.local')
+    );
+  }
+
+  fileConfigs.push(path.join(getConfigDir(), 'config.env'));
 
   const config = {};
 

@@ -27,6 +27,8 @@ The CLI also reads `~/.config/youtrack-issue/config.env`.
 
 The alias config path can also be set with `YOUTRACK_CONFIG`.
 
+When invoked as a global command (`ytissue` / `youtrack-issue`), the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
+
 For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 
 ```json
