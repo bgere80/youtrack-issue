@@ -214,3 +214,21 @@ Help:
 ```bash
 youtrack-issue --help
 ```
+
+## Testing
+
+The committed test suite is fully offline:
+
+```bash
+npm test
+```
+
+For local smoke checks against a real YouTrack server:
+
+1. copy `config.smoke.example.json` to `config.smoke.json`
+2. optionally copy `test/local.smoke.example.mjs` to a local `test/*.smoke.test.mjs` file
+3. or just create your own `test/*.smoke.test.mjs` file directly
+4. adjust the config and test data for your own YouTrack instance
+5. run `npm run test:smoke`
+
+The smoke config and smoke test file are intentionally gitignored, so each developer can keep their own local setup and expectations.

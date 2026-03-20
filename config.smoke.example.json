@@ -1,0 +1,9 @@
+{
+  "defaultAlias": "smoke",
+  "aliases": {
+    "smoke": {
+      "baseUrl": "https://youtrack.example.com",
+      "token": "paste-your-token-here"
+    }
+  }
+}

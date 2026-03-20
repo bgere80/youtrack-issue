@@ -15,9 +15,10 @@
   "scripts": {
     "youtrack-issue": "node ./bin/ytissue.mjs",
     "check": "node --check ./bin/ytissue.mjs",
-    "test": "vitest run",
-    "test:verbose": "vitest run --reporter=verbose",
-    "test:watch": "vitest"
+    "test": "vitest run test/attachments-mode.test.mjs test/cli-config-commands.test.mjs test/cli-help-and-validation.test.mjs test/fields-mode.test.mjs test/projects-mode.test.mjs test/request-timeout.test.mjs",
+    "test:verbose": "vitest run test/attachments-mode.test.mjs test/cli-config-commands.test.mjs test/cli-help-and-validation.test.mjs test/fields-mode.test.mjs test/projects-mode.test.mjs test/request-timeout.test.mjs --reporter=verbose",
+    "test:watch": "vitest test/attachments-mode.test.mjs test/cli-config-commands.test.mjs test/cli-help-and-validation.test.mjs test/fields-mode.test.mjs test/projects-mode.test.mjs test/request-timeout.test.mjs",
+    "test:smoke": "vitest run --passWithNoTests test/*.smoke.test.mjs"
   },
   "engines": {
     "node": ">=18"

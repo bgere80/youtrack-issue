@@ -22,11 +22,16 @@ Main files:
 - `package.json`: package metadata and `bin` mapping
 - `README.md`: user-facing documentation
 - `config.example.json`: safe example config committed to the repo
+- `config.smoke.example.json`: example config for local smoke testing
+- `test/local.smoke.example.mjs`: example local smoke tests for real-server checks
 
 Local-only file:
 - `config.test.json`
   - intentionally ignored
   - intended for local experiments / real tokens / local alias setups
+- `config.smoke.json`
+  - intentionally ignored
+  - intended for local smoke tests against a real YouTrack server
 
 Global install:
 - `npm link` has been used successfully
@@ -653,14 +658,14 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ### 1. Test strategy cleanup
 
-Current issue:
-- the repo mixes offline/unit-style tests with real-network integration tests
-- `npm test` is not reliable in network-restricted environments
+Current state:
+- `npm test` runs only the committed offline/unit-style suite
+- real-server checks are intentionally local-only and are not committed as shared tests
+- `npm run test:smoke` runs ignored `test/*.smoke.test.mjs` files when they exist
 
-Recommended direction:
-- keep the new parser/formatting/API-shape tests offline and deterministic
-- move real YouTrack checks into an explicit integration layer or separate command
-- avoid making local correctness depend on external network availability
+Remaining issue:
+- the local smoke workflow still needs README-level documentation
+- smoke expectations remain environment-specific by design, so they should stay lightweight
 
 ### 2. Documentation cleanup
 
