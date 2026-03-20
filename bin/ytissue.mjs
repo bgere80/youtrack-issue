@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -16,7 +16,13 @@ Options:
   --json              Print raw JSON response
   --comments          Include issue comments
   -a, --alias <name>  Use a configured global alias
+  --add-alias <name>  Add or update an alias in the config file
   -c, --config <path> Load aliases from a specific JSON config file
+  --remove-alias <name>
+                      Remove an alias from the config file
+  --token <value>     Token value for --add-alias
+  --set-default [name]
+                      Set defaultAlias, or use with --add-alias
   --list-aliases      List configured aliases and exit
   --base-url <url>    Override YouTrack base URL
   -h, --help          Show this help
@@ -31,13 +37,18 @@ Config sources:
 
 function parseArgs(argv) {
   const options = {
+    addAlias: '',
     alias: '',
     comments: false,
     configPath: '',
     json: false,
     listAliases: false,
+    removeAlias: '',
     baseUrl: '',
-    issueId: ''
+    issueId: '',
+    setDefaultAlias: '',
+    setDefaultRequested: false,
+    token: ''
   };
   const positionals = [];
 
@@ -54,8 +65,32 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--add-alias') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --add-alias.');
+        process.exit(1);
+      }
+
+      options.addAlias = value;
+      index += 1;
+      continue;
+    }
+
     if (arg === '--list-aliases') {
       options.listAliases = true;
+      continue;
+    }
+
+    if (arg === '--remove-alias') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --remove-alias.');
+        process.exit(1);
+      }
+
+      options.removeAlias = value;
+      index += 1;
       continue;
     }
 
@@ -80,6 +115,30 @@ function parseArgs(argv) {
 
       options.configPath = value;
       index += 1;
+      continue;
+    }
+
+    if (arg === '--token') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --token.');
+        process.exit(1);
+      }
+
+      options.token = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--set-default') {
+      options.setDefaultRequested = true;
+
+      const value = argv[index + 1];
+      if (value && !value.startsWith('-')) {
+        options.setDefaultAlias = value;
+        index += 1;
+      }
+
       continue;
     }
 
@@ -202,17 +261,26 @@ function interpolateEnvInObject(value) {
   return interpolateEnvValue(value);
 }
 
+async function loadRawAliasConfig(filePath) {
+  const config = await loadJsonFile(filePath);
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error(`Invalid config object in ${filePath}`);
+  }
+
+  return config;
+}
+
 function getConfigDir() {
   return path.join(os.homedir(), '.config', 'youtrack-issue');
 }
 
 async function loadGlobalAliasConfig() {
-  const config = await loadJsonFile(path.join(getConfigDir(), 'config.json'));
+  const config = await loadRawAliasConfig(path.join(getConfigDir(), 'config.json'));
   return interpolateEnvInObject(config);
 }
 
 async function loadAliasConfigFromPath(configPath) {
-  const config = await loadJsonFile(path.resolve(configPath));
+  const config = await loadRawAliasConfig(path.resolve(configPath));
   return interpolateEnvInObject(config);
 }
 
@@ -264,6 +332,110 @@ function printAliases(globalConfig, configPath) {
     const baseUrl = typeof config.baseUrl === 'string' && config.baseUrl ? config.baseUrl : '-';
     console.log(`- ${name}${marker}: ${baseUrl}`);
   }
+}
+
+function ensureAliasContainer(config) {
+  if (!config.aliases || typeof config.aliases !== 'object' || Array.isArray(config.aliases)) {
+    config.aliases = {};
+  }
+
+  return config.aliases;
+}
+
+async function saveAliasConfig(configPath, config) {
+  await mkdir(path.dirname(configPath), { recursive: true });
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+}
+
+function validateConfigMutationOptions(options) {
+  const mutationCount = Number(Boolean(options.addAlias)) + Number(Boolean(options.removeAlias));
+  if (mutationCount > 1 || (mutationCount > 0 && options.setDefaultAlias)) {
+    console.error('Use only one config mutation at a time.');
+    process.exit(1);
+  }
+
+  if (options.addAlias) {
+    validateAliasName(options.addAlias);
+    if (!options.baseUrl || !options.token) {
+      console.error('--add-alias requires both --base-url and --token.');
+      process.exit(1);
+    }
+  }
+
+  if (options.setDefaultAlias) {
+    validateAliasName(options.setDefaultAlias);
+    if (options.baseUrl || options.token) {
+      console.error('--set-default <name> cannot be combined with --base-url or --token.');
+      process.exit(1);
+    }
+  }
+
+  if (options.removeAlias) {
+    validateAliasName(options.removeAlias);
+    if (options.baseUrl || options.token || options.setDefaultRequested) {
+      console.error('--remove-alias cannot be combined with --base-url, --token, or --set-default.');
+      process.exit(1);
+    }
+  }
+
+  if (options.setDefaultRequested && !options.addAlias && !options.setDefaultAlias) {
+    console.error('--set-default without a name can only be used with --add-alias.');
+    process.exit(1);
+  }
+}
+
+async function addAliasToConfig(configPath, options) {
+  const config = await loadRawAliasConfig(configPath);
+  const aliases = ensureAliasContainer(config);
+
+  aliases[options.addAlias] = {
+    baseUrl: options.baseUrl,
+    token: options.token
+  };
+
+  if (options.setDefaultRequested) {
+    config.defaultAlias = options.addAlias;
+  }
+
+  await saveAliasConfig(configPath, config);
+
+  console.log(`Saved alias '${options.addAlias}' to ${configPath}`);
+  if (options.setDefaultRequested) {
+    console.log(`Default alias set to '${options.addAlias}'.`);
+  }
+}
+
+async function removeAliasFromConfig(configPath, options) {
+  const config = await loadRawAliasConfig(configPath);
+  const aliases = ensureAliasContainer(config);
+
+  if (!aliases[options.removeAlias]) {
+    console.error(`Alias not found: ${options.removeAlias}`);
+    process.exit(1);
+  }
+
+  delete aliases[options.removeAlias];
+
+  if (config.defaultAlias === options.removeAlias) {
+    delete config.defaultAlias;
+  }
+
+  await saveAliasConfig(configPath, config);
+  console.log(`Removed alias '${options.removeAlias}' from ${configPath}`);
+}
+
+async function setDefaultAliasInConfig(configPath, options) {
+  const config = await loadRawAliasConfig(configPath);
+  const aliases = ensureAliasContainer(config);
+
+  if (!aliases[options.setDefaultAlias]) {
+    console.error(`Alias not found: ${options.setDefaultAlias}`);
+    process.exit(1);
+  }
+
+  config.defaultAlias = options.setDefaultAlias;
+  await saveAliasConfig(configPath, config);
+  console.log(`Default alias set to '${options.setDefaultAlias}' in ${configPath}`);
 }
 
 function exitUnknownAlias(alias, globalConfigPath) {
@@ -452,14 +624,30 @@ async function loadComments(url, token) {
 try {
   const options = parseArgs(args);
   validateAliasName(options.alias);
+  validateConfigMutationOptions(options);
 
   const globalConfigPath = options.configPath
     ? path.resolve(options.configPath)
     : path.join(getConfigDir(), 'config.json');
+
+  if (options.addAlias) {
+    await addAliasToConfig(globalConfigPath, options);
+    process.exit(0);
+  }
+
+  if (options.setDefaultAlias) {
+    await setDefaultAliasInConfig(globalConfigPath, options);
+    process.exit(0);
+  }
+
+  if (options.removeAlias) {
+    await removeAliasFromConfig(globalConfigPath, options);
+    process.exit(0);
+  }
+
   const globalAliasConfig = options.configPath
     ? await loadAliasConfigFromPath(options.configPath)
     : await loadGlobalAliasConfig();
-  const fileConfig = await loadConfig();
 
   if (options.listAliases) {
     printAliases(globalAliasConfig, globalConfigPath);
@@ -471,6 +659,7 @@ try {
     process.exit(1);
   }
 
+  const fileConfig = await loadConfig();
   const defaultAlias = options.alias ? '' : resolveDefaultAlias(globalAliasConfig);
   const resolvedAlias = options.alias || defaultAlias;
   const aliasConfig = resolvedAlias ? resolveAliasConfig(globalAliasConfig, resolvedAlias) : null;

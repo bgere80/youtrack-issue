@@ -103,6 +103,18 @@ node ./bin/ytissue.mjs --list-aliases
 node ./bin/ytissue.mjs -c ./config.example.json --list-aliases
 ```
 
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json --add-alias work --base-url https://youtrack.example.com --token '${YOUTRACK_WORK_TOKEN}' --set-default
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json --set-default work
+```
+
+```bash
+node ./bin/ytissue.mjs -c ./config.test.json --remove-alias work
+```
+
 Or install globally from the repo:
 
 ```bash
