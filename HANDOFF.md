@@ -137,10 +137,12 @@ Frequently used read/query options now have short aliases:
 - `-a` for `--alias`
 - `-b` for `--brief`
 - `-c` for `--config`
+- `-f` for `--field`
 - `-h` for `--help`
 - `-j` for `--json`
 - `-l` for `--list`
 - `-n` for `--limit`
+- `-p` for `--projects`
 - `-s` for `--search`
 
 Boolean short flags can be grouped, and a grouped sequence may end with one short option that takes a value.
@@ -338,6 +340,57 @@ Conclusion:
 Why:
 - often you want relationship structure without the rest of the issue payload
 
+### Should field lookup be a custom-fields-only view?
+
+Question:
+- should field selection mean "print only custom fields"?
+
+Conclusion:
+- no
+- separate field discovery from field value lookup
+
+Current model:
+- `--fields`: list available field names
+- `--field <name...>`: print only selected field values
+
+Why:
+- users need to know which fields exist before selecting them
+- the useful set includes both standard issue fields and custom fields
+- this is more flexible than a custom-fields-only view
+
+### Should `--field` accept multiple values?
+
+Question:
+- should selected fields be repeated one-by-one or accepted in a single option?
+
+Conclusion:
+- support both repeated and variadic usage
+
+Current model:
+- `--field summary --field "Spent time"`
+- `-f summary "Spent time" tags`
+
+Why:
+- repeated form is explicit and script-friendly
+- variadic form is faster in interactive shell usage
+
+### Should attachment handling stop at metadata?
+
+Question:
+- should attachments stay metadata-only, or should direct download also be supported?
+
+Conclusion:
+- support both list and download
+
+Current modes:
+- `--attachments`
+- `--download-attachment <id-or-name>`
+
+Why:
+- listing is useful for discovery
+- direct download removes a common manual step
+- exact ID or exact file name matching keeps the UX simple
+
 ### Should env var names be generic?
 
 Question:
@@ -382,6 +435,25 @@ Uncertainty:
 Result:
 - this initially failed because config path resolution happened too early
 - the lookup was changed so `.env` values are loaded before config path resolution
+
+### Variadic `--field` parsing
+
+Uncertainty:
+- whether Commander would always pass a variadic option to the collector as an array
+
+Result:
+- no, collector input must defensively handle both a single string and an array
+- otherwise a single field value can be accidentally spread into characters
+
+### Test execution model
+
+Uncertainty:
+- whether the current test suite provides reliable local validation in restricted environments
+
+Result:
+- no
+- some existing tests are real-network integration tests against YouTrack
+- in a network-restricted environment these fail with `fetch failed`, even when the CLI logic is otherwise correct
 
 ## CLI Capabilities
 
@@ -494,6 +566,8 @@ Behavior:
 - `--download-attachment <id-or-name>` downloads the matching attachment into the current working directory
 - download matching accepts an exact attachment ID or exact file name
 - download refuses ambiguous name matches
+- download currently writes to cwd under the original attachment filename
+- download currently uses exclusive file creation and does not overwrite existing files
 
 ### Projects mode
 
@@ -582,18 +656,49 @@ Still not implemented.
 
 At the moment network calls rely on default `fetch` behavior without explicit timeouts.
 
-### 2. Documentation cleanup
+### 2. Test strategy cleanup
+
+Current issue:
+- the repo mixes offline/unit-style tests with real-network integration tests
+- `npm test` is not reliable in network-restricted environments
+
+Recommended direction:
+- keep the new parser/formatting/API-shape tests offline and deterministic
+- move real YouTrack checks into an explicit integration layer or separate command
+- avoid making local correctness depend on external network availability
+
+### 3. Documentation cleanup
 
 README is functional and current enough for use, but can still be tightened:
 - remove any low-value development detail
 - possibly document which outputs are raw vs filtered
 
+### 4. Higher-level read-only features worth considering
+
+These came up as plausible next read-oriented features and remain undecided:
+- issue activity / history view, likely `--activity`
+- saved searches / saved queries listing
+- votes / voters view
+- watchers view
+
+These are ideas, not committed roadmap items.
+
+### 5. Attachment UX follow-ups
+
+Current implementation is intentionally minimal.
+
+Still open:
+- whether download should support an explicit output path
+- whether attachment name matching should stay exact-only or allow friendlier selection
+- whether batch download is worth supporting
+
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
 1. add timeout / abort handling
-2. tighten README output-mode documentation
-3. consider higher-level history/activity views
+2. separate offline tests from real-network integration tests
+3. tighten README output-mode documentation
+4. consider higher-level history/activity views
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope
