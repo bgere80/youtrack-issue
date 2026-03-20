@@ -104,6 +104,22 @@ node ./bin/ytissue.mjs -c ./config.example.json AB-3941
 ```
 
 ```bash
+node ./bin/ytissue.mjs --list
+```
+
+```bash
+node ./bin/ytissue.mjs --search "for: me #Unresolved"
+```
+
+```bash
+node ./bin/ytissue.mjs -a work --list --limit 20
+```
+
+```bash
+node ./bin/ytissue.mjs -a work --search "project: AB" --limit 20
+```
+
+```bash
 node ./bin/ytissue.mjs --list-aliases
 ```
 

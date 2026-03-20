@@ -23,7 +23,10 @@ Options:
   --token <value>     Token value for --add-alias
   --set-default [name]
                       Set defaultAlias, or use with --add-alias
+  --list              List issues (queryless, limited by --limit)
   --list-aliases      List configured aliases and exit
+  --search <query>    Search issues matching a query
+  --limit <n>         Limit results for list/search (default: 20)
   --base-url <url>    Override YouTrack base URL
   -h, --help          Show this help
 
@@ -50,11 +53,16 @@ function parseArgs(argv) {
     addAlias: '',
     alias: '',
     comments: false,
+    command: 'issue',
     configPath: '',
+    query: '',
     json: false,
+    listRequested: false,
     listAliases: false,
+    limit: 20,
     removeAlias: '',
     baseUrl: '',
+    searchQuery: '',
     issueId: '',
     setDefaultAlias: '',
     setDefaultRequested: false,
@@ -89,6 +97,29 @@ function parseArgs(argv) {
 
     if (arg === '--list-aliases') {
       options.listAliases = true;
+      continue;
+    }
+
+    if (arg === '--list') {
+      options.listRequested = true;
+      continue;
+    }
+
+    if (arg === '--limit') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --limit.');
+        process.exit(1);
+      }
+
+      const parsed = Number.parseInt(value, 10);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        console.error('Invalid value for --limit.');
+        process.exit(1);
+      }
+
+      options.limit = parsed;
+      index += 1;
       continue;
     }
 
@@ -152,6 +183,18 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--search') {
+      const value = argv[index + 1];
+      if (!value) {
+        console.error('Missing value for --search.');
+        process.exit(1);
+      }
+
+      options.searchQuery = value;
+      index += 1;
+      continue;
+    }
+
     if (arg === '--base-url') {
       const value = argv[index + 1];
       if (!value) {
@@ -176,6 +219,20 @@ function parseArgs(argv) {
     }
 
     positionals.push(arg);
+  }
+
+  if (options.listRequested && options.searchQuery) {
+    console.error('Use only one of --list or --search.');
+    process.exit(1);
+  }
+
+  if (options.listRequested) {
+    options.command = 'list';
+  }
+
+  if (options.searchQuery) {
+    options.command = 'search';
+    options.query = options.searchQuery;
   }
 
   if (positionals.length === 1) {
@@ -410,6 +467,18 @@ function validateConfigMutationOptions(options) {
   }
 }
 
+function validateQueryOptions(options) {
+  if (options.command === 'search' && !options.query) {
+    console.error('search requires a query.');
+    process.exit(1);
+  }
+
+  if ((options.command === 'list' || options.command === 'search') && options.comments) {
+    console.error('--comments is only supported for single-issue lookup.');
+    process.exit(1);
+  }
+}
+
 async function addAliasToConfig(configPath, options) {
   const config = await loadRawAliasConfig(configPath);
   const aliases = ensureAliasContainer(config);
@@ -557,6 +626,15 @@ const fields = [
   'customFields(name,value(name,login,fullName,text,presentation,color(id),minutes))'
 ].join(',');
 
+const listFields = [
+  'idReadable',
+  'summary',
+  'updated',
+  'project(name,shortName)',
+  'assignee(login,name,fullName)',
+  'customFields(name,value(name,login,fullName,text,presentation,minutes))'
+].join(',');
+
 function formatDate(value) {
   if (!value) {
     return '-';
@@ -633,6 +711,15 @@ function formatLink(link) {
 
 const HEADER_FIELD_NAMES = new Set(['Assignee', 'Type', 'State', 'Prio']);
 
+function formatListIssue(issue) {
+  const state = getCustomFieldValue(issue, 'State');
+  const prio = getCustomFieldValue(issue, 'Prio');
+  const assignee = resolveAssignee(issue);
+  const updated = formatDate(issue.updated);
+
+  return `${issue.idReadable} | ${state} | ${prio} | ${assignee} | ${updated}\n  ${issue.summary || '-'}`;
+}
+
 async function loadComments(url, token) {
   const commentsUrl = new URL(`${url.toString()}/comments`);
   commentsUrl.searchParams.set('fields', 'author(login,name,fullName),created,updated,text');
@@ -656,6 +743,7 @@ try {
   const options = parseArgs(args);
   validateAliasName(options.alias);
   validateConfigMutationOptions(options);
+  validateQueryOptions(options);
 
   const fileConfig = await loadConfig();
   const defaultConfigPath = path.join(getConfigDir(), 'config.json');
@@ -685,7 +773,7 @@ try {
     process.exit(0);
   }
 
-  if (!options.issueId) {
+  if (options.command === 'issue' && !options.issueId) {
     printUsage();
     process.exit(1);
   }
@@ -704,6 +792,51 @@ try {
   if (!token) {
     console.error('Missing YOUTRACK_TOKEN. Set it via alias config, env var, or config file.');
     process.exit(1);
+  }
+
+  if (options.command === 'list' || options.command === 'search') {
+    const url = new URL(`${baseUrl.replace(/\/+$/, '')}/api/issues`);
+    if (options.command === 'search') {
+      url.searchParams.set('query', options.query);
+    }
+    url.searchParams.set('$top', String(options.limit));
+    url.searchParams.set('fields', listFields);
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`YouTrack request failed: ${response.status} ${response.statusText}`);
+      if (text) {
+        console.error(text);
+      }
+      process.exit(1);
+    }
+
+    const issues = await response.json();
+
+    if (options.json) {
+      console.log(JSON.stringify(issues, null, 2));
+      process.exit(0);
+    }
+
+    if (!Array.isArray(issues) || issues.length === 0) {
+      console.log('No issues found.');
+      process.exit(0);
+    }
+
+    console.log(`Results: ${issues.length}`);
+    for (const issue of issues) {
+      console.log('');
+      console.log(formatListIssue(issue));
+    }
+
+    process.exit(0);
   }
 
   const url = new URL(`${baseUrl.replace(/\/+$/, '')}/api/issues/${encodeURIComponent(options.issueId)}`);
