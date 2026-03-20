@@ -92,6 +92,10 @@ node ./bin/ytissue.mjs --comments-only AB-3941
 ```
 
 ```bash
+node ./bin/ytissue.mjs --linked-issues AB-3941
+```
+
+```bash
 node ./bin/ytissue.mjs --spent-time AB-3941
 ```
 

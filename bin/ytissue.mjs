@@ -17,6 +17,7 @@ Options:
   --json              Print raw JSON response
   --comments          Include issue comments
   --comments-only     Print only issue comments
+  --linked-issues     Print only linked issues
   --spent-time        Print only issue spent time
   --work-items        Print only issue work items
   -a, --alias <name>  Use a configured global alias
@@ -63,6 +64,7 @@ function parseArgs(argv) {
     configPath: '',
     query: '',
     json: false,
+    linkedIssues: false,
     listRequested: false,
     listAliases: false,
     limit: 20,
@@ -98,6 +100,11 @@ function parseArgs(argv) {
 
     if (arg === '--comments-only') {
       options.commentsOnly = true;
+      continue;
+    }
+
+    if (arg === '--linked-issues') {
+      options.linkedIssues = true;
       continue;
     }
 
@@ -501,8 +508,8 @@ function validateQueryOptions(options) {
     process.exit(1);
   }
 
-  if ((options.command === 'list' || options.command === 'search') && (options.comments || options.commentsOnly || options.spentTime || options.workItems)) {
-    console.error('--comments, --comments-only, --spent-time, and --work-items are only supported for single-issue lookup.');
+  if ((options.command === 'list' || options.command === 'search') && (options.comments || options.commentsOnly || options.linkedIssues || options.spentTime || options.workItems)) {
+    console.error('--comments, --comments-only, --linked-issues, --spent-time, and --work-items are only supported for single-issue lookup.');
     process.exit(1);
   }
 
@@ -511,8 +518,13 @@ function validateQueryOptions(options) {
     process.exit(1);
   }
 
-  if ((options.comments || options.commentsOnly) && (options.spentTime || options.workItems)) {
-    console.error('Use only one of --comments, --comments-only, --spent-time, or --work-items.');
+  if ((options.comments || options.commentsOnly) && (options.linkedIssues || options.spentTime || options.workItems)) {
+    console.error('Use only one of --comments, --comments-only, --linked-issues, --spent-time, or --work-items.');
+    process.exit(1);
+  }
+
+  if (options.linkedIssues && (options.spentTime || options.workItems)) {
+    console.error('Use only one of --linked-issues, --spent-time, or --work-items.');
     process.exit(1);
   }
 
@@ -818,6 +830,16 @@ function formatLink(link) {
   return `${label}${direction}: ${issueItems.join('; ')}`;
 }
 
+function getVisibleLinks(issue) {
+  if (!Array.isArray(issue.links)) {
+    return [];
+  }
+
+  return issue.links
+    .map(formatLink)
+    .filter(Boolean);
+}
+
 const HEADER_FIELD_NAMES = new Set(['Assignee', 'Type', 'State', 'Prio']);
 
 function formatListIssue(issue) {
@@ -1038,6 +1060,8 @@ try {
   if (options.json) {
     const payload = options.commentsOnly
       ? comments
+      : options.linkedIssues
+        ? (issue.links || [])
       : options.spentTime
         ? { spentTime: getSpentTime(issue) }
       : options.workItems
@@ -1058,6 +1082,21 @@ try {
       console.log('');
       console.log(`- ${formatUser(comment.author)} @ ${formatDate(comment.created)}`);
       console.log(comment.text || '-');
+    }
+    process.exit(0);
+  }
+
+  if (options.linkedIssues) {
+    const visibleLinks = getVisibleLinks(issue);
+    if (visibleLinks.length === 0) {
+      console.log('No linked issues.');
+      process.exit(0);
+    }
+
+    console.log(`Linked issue groups: ${visibleLinks.length}`);
+    for (const link of visibleLinks) {
+      console.log('');
+      console.log(link);
     }
     process.exit(0);
   }
@@ -1109,9 +1148,7 @@ try {
   }
 
   if (Array.isArray(issue.links) && issue.links.length > 0) {
-    const visibleLinks = issue.links
-      .map(formatLink)
-      .filter(Boolean);
+    const visibleLinks = getVisibleLinks(issue);
 
     if (visibleLinks.length > 0) {
       console.log('');
