@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { configPath, expectSuccess, runCli } from './helpers.mjs';
 
 describe('ytissue CLI query modes', () => {
+  it('supports grouped short options for list, brief, and limit', async () => {
+    const result = await runCli(['-c', configPath, '-lbn', '2']);
+    expectSuccess(result);
+    expect(result.stdout).not.toMatch(/\|/);
+    expect(result.stdout).toMatch(/^[A-Z]+-\d+\s{2}.+/m);
+  }, 30_000);
+
   it('lists issues', async () => {
     const result = await runCli(['-c', configPath, '--list', '--limit', '2']);
     expectSuccess(result);
@@ -28,5 +35,12 @@ describe('ytissue CLI query modes', () => {
     const payload = JSON.parse(result.stdout);
     expect(Array.isArray(payload)).toBe(true);
     expect(payload.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('supports grouped short options for brief and search', async () => {
+    const result = await runCli(['-c', configPath, '-bs', 'project: AB', '-n', '2']);
+    expectSuccess(result);
+    expect(result.stdout).not.toMatch(/\|/);
+    expect(result.stdout).toMatch(/^[A-Z]+-\d+\s{2}.+/m);
   }, 30_000);
 });

@@ -25,5 +25,8 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
   }
 }

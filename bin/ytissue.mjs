@@ -46,6 +46,11 @@ const DEFAULT_BASE_URL = 'https://youtrack.billingo.com';
 const args = process.argv.slice(2);
 
 try {
+  if (args.length === 0) {
+    printUsage();
+    process.exit(1);
+  }
+
   const options = parseArgs(args);
   validateAliasName(options.alias);
   validateConfigMutationOptions(options);

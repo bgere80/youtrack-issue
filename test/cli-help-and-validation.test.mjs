@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { configPath, expectFailure, expectSuccess, runCli } from './helpers.mjs';
 
 describe('ytissue CLI help and validation', () => {
+  it('prints the same help text for no args as for -h, with different exit codes', async () => {
+    const noArgsResult = await runCli([]);
+    const helpResult = await runCli(['-h']);
+
+    expectFailure(noArgsResult);
+    expectSuccess(helpResult);
+    expect(noArgsResult.stdout).toBe(helpResult.stdout);
+  });
+
   it('prints help', async () => {
     const result = await runCli(['--help']);
     expectSuccess(result);
