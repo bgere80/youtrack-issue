@@ -464,6 +464,21 @@ Behavior:
 - text mode filters out empty link groups
 - json mode returns the same filtered link groups, with empty groups removed
 
+### Fields mode
+
+Examples:
+- `ytissue AB-3941 --fields`
+- `ytissue AB-3941 --field summary --field "Spent time"`
+- `ytissue AB-3941 --field project --field tags --json`
+
+Behavior:
+- `--fields` lists the available issue field names
+- output includes standard issue fields and custom field names separately
+- `--field <name>` prints only the requested field value
+- `--field` matching is case-insensitive
+- repeated `--field` is supported
+- `--json` with `--field` returns an object keyed by field name
+
 ### Projects mode
 
 Examples:

@@ -104,6 +104,14 @@ node ./bin/ytissue.mjs --work-items AB-3941
 ```
 
 ```bash
+node ./bin/ytissue.mjs AB-3941 --fields
+```
+
+```bash
+node ./bin/ytissue.mjs AB-3941 --field summary --field "Spent time"
+```
+
+```bash
 node ./bin/ytissue.mjs -a work AB-3941
 ```
 

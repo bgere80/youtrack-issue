@@ -37,6 +37,8 @@ import {
   formatUser,
   formatWorkItem,
   getCustomFieldValue,
+  listAvailableIssueFields,
+  resolveIssueFields,
   getSpentTime,
   getVisibleLinkGroups,
   getVisibleLinks,
@@ -174,6 +176,62 @@ try {
   }
 
   const issue = await fetchIssue(baseUrl, options.issueId, token);
+
+  if (options.command === 'fields') {
+    if (options.fieldNames.length === 0) {
+      const availableFields = listAvailableIssueFields(issue);
+
+      if (options.json) {
+        console.log(JSON.stringify(availableFields, null, 2));
+        process.exit(0);
+      }
+
+      console.log('Available fields:');
+      console.log('');
+      console.log('Standard:');
+      for (const fieldName of availableFields.standardFields) {
+        console.log(`- ${fieldName}`);
+      }
+
+      console.log('');
+      console.log('Custom:');
+      if (availableFields.customFields.length === 0) {
+        console.log('- none');
+      } else {
+        for (const fieldName of availableFields.customFields) {
+          console.log(`- ${fieldName}`);
+        }
+      }
+
+      process.exit(0);
+    }
+
+    const resolvedFields = resolveIssueFields(issue, options.fieldNames);
+    if (resolvedFields.missing.length > 0) {
+      console.error(`Unknown field(s): ${resolvedFields.missing.join(', ')}`);
+      console.error('Use --fields to list the available field names.');
+      process.exit(1);
+    }
+
+    if (options.json) {
+      const payload = Object.fromEntries(
+        resolvedFields.fields.map((field) => [field.name, field.rawValue])
+      );
+      console.log(JSON.stringify(payload, null, 2));
+      process.exit(0);
+    }
+
+    for (const field of resolvedFields.fields) {
+      if (field.textValue.includes('\n')) {
+        console.log(`${field.name}:`);
+        console.log(field.textValue);
+        continue;
+      }
+
+      console.log(`${field.name}: ${field.textValue}`);
+    }
+    process.exit(0);
+  }
 
   let comments = [];
   if (options.comments || options.commentsOnly) {
