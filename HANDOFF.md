@@ -26,12 +26,9 @@ Main files:
 - `test/local.smoke.example.mjs`: example local smoke tests for real-server checks
 
 Local-only file:
-- `config.test.json`
-  - intentionally ignored
-  - intended for local experiments / real tokens / local alias setups
 - `config.smoke.json`
   - intentionally ignored
-  - intended for local smoke tests against a real YouTrack server
+  - intended for local smoke tests, local alias setups, and real tokens
 
 Global install:
 - `npm link` has been used successfully
@@ -234,7 +231,7 @@ Question:
 Conclusion:
 - committed example uses a plain placeholder
 - env interpolation remains supported and documented separately
-- local `config.test.json` stays ignored
+- local `config.smoke.json` stays ignored
 
 Why:
 - simpler example file

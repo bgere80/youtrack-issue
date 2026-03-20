@@ -1,0 +1,9 @@
+{
+  "defaultAlias": "test",
+  "aliases": {
+    "test": {
+      "baseUrl": "https://youtrack.example.com",
+      "token": "perm-test-token"
+    }
+  }
+}

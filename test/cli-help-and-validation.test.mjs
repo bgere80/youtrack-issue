@@ -22,7 +22,7 @@ describe('ytissue CLI help and validation', () => {
     const result = await runCli(['-c', configPath, 'config', 'list-aliases']);
     expectSuccess(result);
     expect(result.stdout).toMatch(/Config: .*config\.test\.json/);
-    expect(result.stdout).toMatch(/billingo \(default\): https:\/\/youtrack\.billingo\.com/);
+    expect(result.stdout).toMatch(/test \(default\): https:\/\/youtrack\.example\.com/);
   });
 
   it('rejects incompatible query options', async () => {

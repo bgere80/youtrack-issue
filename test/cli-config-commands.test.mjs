@@ -33,11 +33,11 @@ describe('ytissue CLI config commands', () => {
       expect(saved.aliases.temp.baseUrl).toBe('https://youtrack.example.com');
       expect(saved.aliases.temp.token).toBe('${YTISSUE_TEMP_TOKEN}');
 
-      const setDefaultResult = await runCli(['-c', tempConfigPath, 'config', 'set-default', 'billingo']);
+      const setDefaultResult = await runCli(['-c', tempConfigPath, 'config', 'set-default', 'test']);
       expectSuccess(setDefaultResult);
 
       saved = JSON.parse(await readFile(tempConfigPath, 'utf8'));
-      expect(saved.defaultAlias).toBe('billingo');
+      expect(saved.defaultAlias).toBe('test');
 
       const removeResult = await runCli(['-c', tempConfigPath, 'config', 'remove-alias', 'temp']);
       expectSuccess(removeResult);
@@ -52,6 +52,6 @@ describe('ytissue CLI config commands', () => {
   it('lists aliases through the config subcommand', async () => {
     const result = await runCli(['-c', configPath, 'config', 'list-aliases']);
     expectSuccess(result);
-    expect(result.stdout).toMatch(/billingo \(default\): https:\/\/youtrack\.billingo\.com/);
+    expect(result.stdout).toMatch(/test \(default\): https:\/\/youtrack\.example\.com/);
   });
 });

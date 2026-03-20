@@ -3,6 +3,5 @@ node_modules/
 .idea/
 .env
 .env.local
-config.test.json
 config.smoke.json
 test/*.smoke.test.mjs

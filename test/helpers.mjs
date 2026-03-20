@@ -11,7 +11,6 @@ const debugCliTests = process.env.DEBUG_CLI_TESTS === '1';
 export const repoRoot = process.cwd();
 export const cliPath = path.join(repoRoot, 'bin', 'ytissue.mjs');
 export const configPath = path.join(repoRoot, 'config.test.json');
-export const issueId = 'AB-3941';
 
 export async function runCli(args, options = {}) {
   if (debugCliTests) {

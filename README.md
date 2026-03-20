@@ -184,15 +184,15 @@ node ./bin/ytissue.mjs -c ./config.example.json config list-aliases
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
+node ./bin/ytissue.mjs -c ./config.smoke.json config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json config set-default work
+node ./bin/ytissue.mjs -c ./config.smoke.json config set-default work
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json config remove-alias work
+node ./bin/ytissue.mjs -c ./config.smoke.json config remove-alias work
 ```
 
 Or install globally from the repo:
