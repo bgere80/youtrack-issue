@@ -464,6 +464,20 @@ Behavior:
 - text mode filters out empty link groups
 - json mode returns the same filtered link groups, with empty groups removed
 
+### Projects mode
+
+Examples:
+- `ytissue --projects`
+- `ytissue --projects --brief`
+- `ytissue work --projects`
+
+Behavior:
+- `--projects` hits `GET /api/admin/projects`
+- respects `--limit`
+- default mode: `SHORTNAME | active|archived` plus project name
+- `--brief`: `SHORTNAME  Name`
+- `--json`: raw project array
+
 ## Config Management Commands
 
 Examples:
@@ -490,6 +504,7 @@ ytissue AB-3941 --linked-issues
 ytissue --search "project: AB" --limit 20
 ytissue --search "project: AB" --brief
 ytissue --list --limit 20
+ytissue --projects --limit 20
 
 ytissue -bs "project: AB" -n 20
 ytissue -lbn 20
@@ -530,16 +545,7 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ## Known Gaps / Open Items
 
-### 1. Projects listing
-
-Still not implemented.
-
-This was discussed as a good next read-only feature.
-
-Likely shape:
-- `--projects`
-
-### 2. Attachments
+### 1. Attachments
 
 Still not implemented.
 
@@ -547,13 +553,13 @@ Likely staged approach:
 1. attachment metadata view
 2. only later, if needed, explicit binary download support
 
-### 3. Request timeout / abort handling
+### 2. Request timeout / abort handling
 
 Still not implemented.
 
 At the moment network calls rely on default `fetch` behavior without explicit timeouts.
 
-### 5. Documentation cleanup
+### 3. Documentation cleanup
 
 README is functional and current enough for use, but can still be tightened:
 - remove any low-value development detail
@@ -562,9 +568,9 @@ README is functional and current enough for use, but can still be tightened:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. add `--projects`
-2. add attachment metadata view
-3. add timeout / abort handling
+1. add attachment metadata view
+2. add timeout / abort handling
+3. tighten README output-mode documentation
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope

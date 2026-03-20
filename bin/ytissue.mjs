@@ -27,10 +27,13 @@ import {
   HEADER_FIELD_NAMES,
   fetchIssue,
   fetchIssues,
+  fetchProjects,
   formatBriefListIssue,
+  formatBriefProject,
   formatDate,
   formatFieldValue,
   formatListIssue,
+  formatProject,
   formatUser,
   formatWorkItem,
   getCustomFieldValue,
@@ -110,6 +113,35 @@ try {
   if (!token) {
     console.error('Missing YTISSUE_TOKEN. Set it via alias config, env var, or config file.');
     process.exit(1);
+  }
+
+  if (options.command === 'projects') {
+    const projects = await fetchProjects(baseUrl, options.limit, token);
+
+    if (options.json) {
+      console.log(JSON.stringify(projects, null, 2));
+      process.exit(0);
+    }
+
+    if (!Array.isArray(projects) || projects.length === 0) {
+      console.log('No projects found.');
+      process.exit(0);
+    }
+
+    if (options.brief) {
+      for (const project of projects) {
+        console.log(formatBriefProject(project));
+      }
+      process.exit(0);
+    }
+
+    console.log(`Projects: ${projects.length}`);
+    for (const project of projects) {
+      console.log('');
+      console.log(formatProject(project));
+    }
+
+    process.exit(0);
   }
 
   if (options.command === 'list' || options.command === 'search') {
