@@ -16,6 +16,7 @@ Options:
   --brief             Compact output for list/search results
   --json              Print raw JSON response
   --comments          Include issue comments
+  --comments-only     Print only issue comments
   -a, --alias <name>  Use a configured global alias
   --add-alias <name>  Add or update an alias in the config file
   -c, --config <path> Load aliases from a specific JSON config file
@@ -55,6 +56,7 @@ function parseArgs(argv) {
     alias: '',
     brief: false,
     comments: false,
+    commentsOnly: false,
     command: 'issue',
     configPath: '',
     query: '',
@@ -87,6 +89,11 @@ function parseArgs(argv) {
 
     if (arg === '--comments') {
       options.comments = true;
+      continue;
+    }
+
+    if (arg === '--comments-only') {
+      options.commentsOnly = true;
       continue;
     }
 
@@ -480,8 +487,13 @@ function validateQueryOptions(options) {
     process.exit(1);
   }
 
-  if ((options.command === 'list' || options.command === 'search') && options.comments) {
-    console.error('--comments is only supported for single-issue lookup.');
+  if ((options.command === 'list' || options.command === 'search') && (options.comments || options.commentsOnly)) {
+    console.error('--comments and --comments-only are only supported for single-issue lookup.');
+    process.exit(1);
+  }
+
+  if (options.comments && options.commentsOnly) {
+    console.error('Use only one of --comments or --comments-only.');
     process.exit(1);
   }
 }
@@ -798,8 +810,8 @@ function formatBriefListIssue(issue) {
   return colorize(text, getStateColor(getIssueState(issue)));
 }
 
-async function loadComments(url, token) {
-  const commentsUrl = new URL(`${url.toString()}/comments`);
+async function loadComments(baseUrl, issueId, token) {
+  const commentsUrl = new URL(`${baseUrl.replace(/\/+$/, '')}/api/issues/${encodeURIComponent(issueId)}/comments`);
   commentsUrl.searchParams.set('fields', 'author(login,name,fullName),created,updated,text');
 
   const response = await fetch(commentsUrl, {
@@ -946,13 +958,28 @@ try {
   const issue = await response.json();
 
   let comments = [];
-  if (options.comments) {
-    comments = await loadComments(url, token);
+  if (options.comments || options.commentsOnly) {
+    comments = await loadComments(baseUrl, options.issueId, token);
   }
 
   if (options.json) {
-    const payload = options.comments ? { issue, comments } : issue;
+    const payload = options.commentsOnly ? comments : (options.comments ? { issue, comments } : issue);
     console.log(JSON.stringify(payload, null, 2));
+    process.exit(0);
+  }
+
+  if (options.commentsOnly) {
+    if (comments.length === 0) {
+      console.log('No comments.');
+      process.exit(0);
+    }
+
+    console.log(`Comments: ${comments.length}`);
+    for (const comment of comments) {
+      console.log('');
+      console.log(`- ${formatUser(comment.author)} @ ${formatDate(comment.created)}`);
+      console.log(comment.text || '-');
+    }
     process.exit(0);
   }
 

@@ -88,6 +88,10 @@ node ./bin/ytissue.mjs --comments AB-3941
 ```
 
 ```bash
+node ./bin/ytissue.mjs --comments-only AB-3941
+```
+
+```bash
 node ./bin/ytissue.mjs -a work AB-3941
 ```
 
