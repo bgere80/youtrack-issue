@@ -64,7 +64,7 @@ Config path precedence:
 Environment file loading:
 - direct `node ./bin/ytissue.mjs ...` execution reads cwd `.env` and `.env.local`
 - both direct and global invocation read `~/.config/youtrack-issue/config.env`
-- `config.env` may also provide `YTISSUE_CONFIG`, `YTISSUE_TOKEN`, and `YTISSUE_BASE_URL`
+- `config.env` may also provide `YTISSUE_CONFIG`, `YTISSUE_TOKEN`, `YTISSUE_BASE_URL`, and `YTISSUE_TIMEOUT_MS`
 
 Alias example:
 
@@ -86,6 +86,7 @@ The CLI now uses only these names:
 - `YTISSUE_TOKEN`
 - `YTISSUE_BASE_URL`
 - `YTISSUE_CONFIG`
+- `YTISSUE_TIMEOUT_MS`
 
 Older `YOUTRACK_*` names were intentionally removed. There is no backward compatibility layer.
 
@@ -650,13 +651,7 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ## Known Gaps / Open Items
 
-### 1. Request timeout / abort handling
-
-Still not implemented.
-
-At the moment network calls rely on default `fetch` behavior without explicit timeouts.
-
-### 2. Test strategy cleanup
+### 1. Test strategy cleanup
 
 Current issue:
 - the repo mixes offline/unit-style tests with real-network integration tests
@@ -667,13 +662,13 @@ Recommended direction:
 - move real YouTrack checks into an explicit integration layer or separate command
 - avoid making local correctness depend on external network availability
 
-### 3. Documentation cleanup
+### 2. Documentation cleanup
 
 README is functional and current enough for use, but can still be tightened:
 - remove any low-value development detail
 - possibly document which outputs are raw vs filtered
 
-### 4. Higher-level read-only features worth considering
+### 3. Higher-level read-only features worth considering
 
 These came up as plausible next read-oriented features and remain undecided:
 - issue activity / history view, likely `--activity`
@@ -683,7 +678,7 @@ These came up as plausible next read-oriented features and remain undecided:
 
 These are ideas, not committed roadmap items.
 
-### 5. Attachment UX follow-ups
+### 4. Attachment UX follow-ups
 
 Current implementation is intentionally minimal.
 
@@ -695,10 +690,9 @@ Still open:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. add timeout / abort handling
-2. separate offline tests from real-network integration tests
-3. tighten README output-mode documentation
-4. consider higher-level history/activity views
+1. separate offline tests from real-network integration tests
+2. tighten README output-mode documentation
+3. consider higher-level history/activity views
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope
