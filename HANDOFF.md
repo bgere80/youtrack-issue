@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This repository contains a standalone, native-dependency-free Node CLI for reading YouTrack data by issue ID or query.
+This repository contains a standalone, native-dependency-free Node CLI for reading YouTrack data by issue ID or query, plus managing local alias configuration.
 
 Primary goals:
 - global CLI usage via `ytissue` and `youtrack-issue`
-- focus on read-oriented workflows
+- focus on read-oriented YouTrack workflows
 - no dependency on the old `youtrack-cli` package or `keytar`
 
 Repository:
@@ -34,9 +34,9 @@ Global install:
 
 ## Core Decisions
 
-### Current scope: read-oriented
+### Current scope: read-oriented issue access with local config management
 
-The current implementation focuses on read-oriented workflows.
+The current implementation focuses on read-oriented YouTrack workflows, while also supporting local alias/config management commands.
 
 Out of scope for now:
 - create issue
@@ -56,8 +56,14 @@ The CLI supports:
 
 Config path precedence:
 1. `--config`
-2. `YTISSUE_CONFIG`
-3. `~/.config/youtrack-issue/config.json`
+2. `YTISSUE_CONFIG` from the process environment
+3. `YTISSUE_CONFIG` loaded from `~/.config/youtrack-issue/config.env`
+4. `~/.config/youtrack-issue/config.json`
+
+Environment file loading:
+- direct `node ./bin/ytissue.mjs ...` execution reads cwd `.env` and `.env.local`
+- both direct and global invocation read `~/.config/youtrack-issue/config.env`
+- `config.env` may also provide `YTISSUE_CONFIG`, `YTISSUE_TOKEN`, and `YTISSUE_BASE_URL`
 
 Alias example:
 
@@ -140,7 +146,8 @@ Conclusion:
 Why:
 - the current value is in reliable read access
 - write workflows would add much more UX and safety complexity
-- current development focus is still on the read side
+- current development focus is still on the read side of YouTrack data access
+- local config file management is already intentionally supported
 
 ### Should we rely on env vars only, or add config?
 

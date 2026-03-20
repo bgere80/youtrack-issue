@@ -1,6 +1,6 @@
 # youtrack-issue
 
-Minimal standalone YouTrack issue CLI.
+Minimal standalone YouTrack issue CLI with global alias config support.
 
 ## Setup
 
@@ -14,7 +14,7 @@ Optional:
 export YTISSUE_BASE_URL="https://youtrack.billingo.com"
 ```
 
-Or use a local config file:
+For direct script execution during development, you can also use a local env file:
 
 ```bash
 cat > .env.local <<'EOF'
@@ -23,9 +23,9 @@ YTISSUE_BASE_URL=https://youtrack.billingo.com
 EOF
 ```
 
-The CLI also reads `~/.config/youtrack-issue/config.env`.
-
-The alias config path can also be set with `YTISSUE_CONFIG`.
+Additional config sources:
+- `~/.config/youtrack-issue/config.env`
+- `YTISSUE_CONFIG` for overriding the alias JSON config path
 
 When invoked as a global command (`ytissue` / `youtrack-issue`), the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
 
@@ -148,7 +148,7 @@ node ./bin/ytissue.mjs -c ./config.example.json --list-aliases
 ```
 
 ```bash
-node ./bin/ytissue.mjs -c ./config.test.json --add-alias work --base-url https://youtrack.example.com --token '${YOUTRACK_WORK_TOKEN}' --set-default
+node ./bin/ytissue.mjs -c ./config.test.json --add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
 ```
 
 ```bash
