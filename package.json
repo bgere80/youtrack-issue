@@ -14,10 +14,16 @@
   },
   "scripts": {
     "youtrack-issue": "node ./bin/ytissue.mjs",
-    "check": "node --check ./bin/ytissue.mjs"
+    "check": "node --check ./bin/ytissue.mjs",
+    "test": "vitest run",
+    "test:verbose": "vitest run --reporter=verbose",
+    "test:watch": "vitest"
   },
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
 }
