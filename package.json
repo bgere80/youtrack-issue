@@ -1,12 +1,27 @@
 {
   "name": "youtrack-issue",
   "version": "0.1.0",
-  "description": "Standalone CLI for fetching YouTrack issues by ID",
-  "private": true,
+  "description": "Standalone CLI for reading YouTrack issues, queries, projects, and local alias config",
   "type": "module",
   "files": [
     "bin",
-    "README.md"
+    "lib",
+    "README.md",
+    "config.example.json"
+  ],
+  "homepage": "https://github.com/bgere80/youtrack-issue#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bgere80/youtrack-issue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bgere80/youtrack-issue/issues"
+  },
+  "keywords": [
+    "youtrack",
+    "cli",
+    "issues",
+    "jetbrains"
   ],
   "bin": {
     "youtrack-issue": "./bin/ytissue.mjs",
@@ -23,7 +38,7 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "vitest": "^4.1.0"
   },

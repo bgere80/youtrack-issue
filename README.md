@@ -1,37 +1,41 @@
 # youtrack-issue
 
-Minimal standalone YouTrack issue CLI with global alias config support.
+Standalone CLI for reading YouTrack issues, queries, projects, and local alias config.
 
 Contributing notes: see `CONTRIBUTING.md`.
 
-## Setup
+## Install
+
+Global install from npm:
+
+```bash
+npm install -g youtrack-issue
+```
+
+The package exposes both:
+
+```bash
+youtrack-issue --help
+ytissue --help
+```
+
+For local development from this repo:
+
+```bash
+npm link
+```
+
+## Quick Start
+
+With environment variables:
 
 ```bash
 export YTISSUE_TOKEN="perm-..."
+export YTISSUE_BASE_URL="https://youtrack.example.com"
+ytissue AB-1234
 ```
 
-Optional:
-
-```bash
-export YTISSUE_BASE_URL="https://youtrack.billingo.com"
-```
-
-For direct script execution during development, you can also use a local env file:
-
-```bash
-cat > .env.local <<'EOF'
-YTISSUE_TOKEN=perm-...
-YTISSUE_BASE_URL=https://youtrack.billingo.com
-EOF
-```
-
-Additional config sources:
-- `~/.config/youtrack-issue/config.env`
-- `YTISSUE_CONFIG` for overriding the alias JSON config path
-
-When invoked as a global command (`ytissue` / `youtrack-issue`), the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
-
-For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
+With a global alias config in `~/.config/youtrack-issue/config.json`:
 
 ```json
 {
@@ -45,7 +49,36 @@ For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 }
 ```
 
-Any string value in the JSON config can also use an environment variable reference:
+Then:
+
+```bash
+ytissue AB-1234
+ytissue work AB-1234
+ytissue -a work AB-1234
+```
+
+## Configuration
+
+Supported environment variables:
+
+- `YTISSUE_TOKEN`
+- `YTISSUE_BASE_URL`
+- `YTISSUE_CONFIG`
+- `YTISSUE_TIMEOUT_MS`
+
+Config path precedence:
+
+1. `--config`
+2. `YTISSUE_CONFIG`
+3. `YTISSUE_CONFIG` from `~/.config/youtrack-issue/config.env`
+4. `~/.config/youtrack-issue/config.json`
+
+Additional config sources:
+
+- `~/.config/youtrack-issue/config.env`
+- `config.example.json` in this repo as a safe example
+
+Any string value in the JSON config may reference environment variables:
 
 ```json
 {
@@ -59,162 +92,59 @@ Any string value in the JSON config can also use an environment variable referen
 }
 ```
 
-Example environment:
+When invoked as a global command, the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
+
+## Common Commands
+
+Single issue:
 
 ```bash
-YTISSUE_DEFAULT_ALIAS=work
-YTISSUE_WORK_BASE_URL=https://youtrack.example.com
-YTISSUE_WORK_TOKEN=perm-...
+ytissue AB-1234
+ytissue AB-1234 --json
+ytissue AB-1234 --comments
+ytissue AB-1234 --comments-only
+ytissue AB-1234 --linked-issues
+ytissue AB-1234 --spent-time
+ytissue AB-1234 --work-items
+ytissue AB-1234 --attachments
+ytissue AB-1234 --download-attachment invoice.pdf
+ytissue AB-1234 --fields
+ytissue AB-1234 --field summary --field "Spent time"
 ```
 
-There is also a repo example at `config.example.json`.
+Queries and projects:
 
 ```bash
-YTISSUE_CONFIG=./config.example.json ytissue config list-aliases
+ytissue --list
+ytissue --list --limit 20
+ytissue --search "project: AB"
+ytissue --search "project: AB" --brief
+ytissue --projects
+ytissue --projects --brief
+ytissue -lbn 20
+ytissue -bs "project: AB" -n 20
 ```
 
-## Usage
+Config management:
 
 ```bash
-node ./bin/ytissue.mjs AB-3941
+ytissue config list-aliases
+ytissue config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
+ytissue config set-default work
+ytissue config remove-alias work
 ```
 
-If `defaultAlias` is set, this form automatically uses that alias.
+Custom config path:
 
 ```bash
-node ./bin/ytissue.mjs --json AB-3941
+ytissue -c ./config.example.json config list-aliases
+ytissue -c ./config.example.json -a work AB-1234
 ```
 
-```bash
-node ./bin/ytissue.mjs --comments AB-3941
-```
+## Help
 
 ```bash
-node ./bin/ytissue.mjs --comments-only AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs --linked-issues AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs --spent-time AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs --work-items AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs AB-3941 --attachments
-```
-
-```bash
-node ./bin/ytissue.mjs AB-3941 --download-attachment invoice.pdf
-```
-
-```bash
-node ./bin/ytissue.mjs AB-3941 --fields
-```
-
-```bash
-node ./bin/ytissue.mjs AB-3941 --field summary --field "Spent time"
-```
-
-```bash
-node ./bin/ytissue.mjs -a work AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs work AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.example.json -a work AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.example.json AB-3941
-```
-
-```bash
-node ./bin/ytissue.mjs --list
-```
-
-```bash
-node ./bin/ytissue.mjs --projects
-```
-
-```bash
-node ./bin/ytissue.mjs --projects --brief
-```
-
-```bash
-node ./bin/ytissue.mjs --search "for: me #Unresolved"
-```
-
-```bash
-node ./bin/ytissue.mjs --search "project: AB" --brief
-```
-
-```bash
-node ./bin/ytissue.mjs -a work --list --limit 20
-```
-
-```bash
-node ./bin/ytissue.mjs work --projects --limit 20
-```
-
-```bash
-node ./bin/ytissue.mjs -a work --search "project: AB" --limit 20
-```
-
-```bash
-node ./bin/ytissue.mjs -lbn 20
-```
-
-```bash
-node ./bin/ytissue.mjs -bs "project: AB" -n 20
-```
-
-```bash
-node ./bin/ytissue.mjs config list-aliases
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.example.json config list-aliases
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.smoke.json config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.smoke.json config set-default work
-```
-
-```bash
-node ./bin/ytissue.mjs -c ./config.smoke.json config remove-alias work
-```
-
-Or install globally from the repo:
-
-```bash
-npm link
-youtrack-issue AB-3941
-```
-
-Short alias:
-
-```bash
-ytissue -a work AB-3941
-ytissue work AB-3941
-```
-
-Help:
-
-```bash
-youtrack-issue --help
+ytissue --help
 ```
 
 ## Testing
@@ -225,12 +155,12 @@ The committed test suite is fully offline:
 npm test
 ```
 
-For local smoke checks against a real YouTrack server:
+Local smoke checks against a real YouTrack server are optional:
 
 1. copy `config.smoke.example.json` to `config.smoke.json`
 2. optionally copy `test/local.smoke.example.mjs` to a local `test/*.smoke.test.mjs` file
-3. or just create your own `test/*.smoke.test.mjs` file directly
+3. or create your own `test/*.smoke.test.mjs` file directly
 4. adjust the config and test data for your own YouTrack instance
 5. run `npm run test:smoke`
 
-The smoke config and smoke test file are intentionally gitignored, so each developer can keep their own local setup and expectations.
+Both `config.smoke.json` and `test/*.smoke.test.mjs` are gitignored by design.

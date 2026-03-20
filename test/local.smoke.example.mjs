@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { expectSuccess, runCli } from './helpers.mjs';
 
 const smokeConfigPath = './config.smoke.json';
-const smokeIssueId = 'AB-3941';
+const smokeIssueId = 'AB-1234';
 
 describe('ytissue local smoke example', () => {
   it('reads one issue from a real YouTrack instance', async () => {
