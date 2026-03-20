@@ -1,0 +1,549 @@
+# Project Handoff
+
+## Purpose
+
+This repository contains a standalone, native-dependency-free Node CLI for reading YouTrack data by issue ID or query.
+
+Primary goals:
+- global CLI usage via `ytissue` and `youtrack-issue`
+- focus on read-oriented workflows
+- no dependency on the old `youtrack-cli` package or `keytar`
+
+Repository:
+- `/Users/bgere/work/youtrack-issue`
+
+GitHub:
+- `https://github.com/bgere80/youtrack-issue`
+
+## Current Shape
+
+Main files:
+- `bin/ytissue.mjs`: CLI implementation
+- `package.json`: package metadata and `bin` mapping
+- `README.md`: user-facing documentation
+- `config.example.json`: safe example config committed to the repo
+
+Local-only file:
+- `config.test.json`
+  - intentionally ignored
+  - intended for local experiments / real tokens / local alias setups
+
+Global install:
+- `npm link` has been used successfully
+- both `ytissue` and `youtrack-issue` are wired to this repo
+
+## Core Decisions
+
+### Current scope: read-oriented
+
+The current implementation focuses on read-oriented workflows.
+
+Out of scope for now:
+- create issue
+- edit issue
+- transitions / write operations
+- attachment upload
+
+This is a current scope decision, not a permanent product boundary.
+
+### Config model
+
+The CLI supports:
+- alias-based config
+- a default alias
+- env vars
+- direct overrides via flags
+
+Config path precedence:
+1. `--config`
+2. `YTISSUE_CONFIG`
+3. `~/.config/youtrack-issue/config.json`
+
+Alias example:
+
+```json
+{
+  "defaultAlias": "work",
+  "aliases": {
+    "work": {
+      "baseUrl": "https://youtrack.example.com",
+      "token": "paste-your-token-here"
+    }
+  }
+}
+```
+
+### Environment variable names
+
+The CLI now uses only these names:
+- `YTISSUE_TOKEN`
+- `YTISSUE_BASE_URL`
+- `YTISSUE_CONFIG`
+
+Older `YOUTRACK_*` names were intentionally removed. There is no backward compatibility layer.
+
+### `.env` behavior
+
+The behavior is intentionally asymmetric:
+
+- global `ytissue` / `youtrack-issue` invocation does **not** read cwd `.env` / `.env.local`
+- direct script execution via `node ./bin/ytissue.mjs ...` **does** read cwd `.env` / `.env.local`
+
+Reason:
+- global CLI should not accidentally inherit unrelated project-local env
+- direct script execution remains convenient during development
+
+This is not emphasized in the CLI help text because it is considered a development detail, not a primary usage path.
+
+### Query UX
+
+There was earlier discussion around positional `list` / `search` commands.
+
+Final decision:
+- no positional `list` or `search`
+- use flags instead:
+  - `--search "<query>"`
+  - `--list`
+
+Reason:
+- avoids conflicts with alias names like `list`
+- keeps the CLI consistently flag-oriented
+
+### Output philosophy
+
+Default output is human-readable.
+
+`--json` is available for machine-readable output.
+
+For query results:
+- default mode: richer multi-field list
+- `--brief`: compact `ID  Summary`
+
+List/search rows are colorized by state:
+- full row coloring
+- only on TTY
+- disabled by `NO_COLOR`
+- not used for `--json`
+
+## Questions We Resolved
+
+This section captures the important questions that came up during development, the options that were considered, and the current conclusion.
+
+### Should the tool stay read-only?
+
+Question:
+- should the CLI eventually create or modify issues?
+
+Conclusion:
+- not now, but this is not ruled out permanently
+
+Why:
+- the current value is in reliable read access
+- write workflows would add much more UX and safety complexity
+- current development focus is still on the read side
+
+### Should we rely on env vars only, or add config?
+
+Question:
+- is simple token/base-url env config enough?
+
+Options considered:
+- env vars only
+- local `.env`
+- global alias config
+
+Conclusion:
+- keep env vars
+- add global alias config
+- support `defaultAlias`
+- support explicit `--config`
+
+Why:
+- env vars are convenient for quick or CI use
+- aliases are much better for daily usage across one or more YouTrack instances
+
+### Should `.env` be used by the global CLI?
+
+Question:
+- should `ytissue ...` automatically read cwd `.env` / `.env.local`?
+
+Conclusion:
+- no
+
+Why:
+- global CLI behavior should not unexpectedly depend on the current project directory
+- this was considered too surprising and error-prone
+
+Follow-up conclusion:
+- direct `node ./bin/ytissue.mjs ...` execution keeps `.env` support for development convenience
+
+### Should config examples contain real placeholders or env references?
+
+Question:
+- should committed config examples use inline token placeholders or `${ENV_VAR}` references?
+
+Conclusion:
+- committed example uses a plain placeholder
+- env interpolation remains supported and documented separately
+- local `config.test.json` stays ignored
+
+Why:
+- simpler example file
+- safer repo defaults
+- env interpolation is still available when needed
+
+### Should query mode be positional or flag-based?
+
+Question:
+- should list/search be positional commands like `ytissue list "..."`?
+
+Options considered:
+- positional commands
+- flags
+
+Conclusion:
+- flags only
+- `--search <query>`
+- `--list`
+
+Why:
+- avoids alias-name collisions
+- fits the rest of the CLI better
+- keeps issue lookup as the default positional mode
+
+### Should `--list` and `--search` mean the same thing?
+
+Question:
+- should both be synonyms for the same query endpoint?
+
+Conclusion:
+- no
+
+Current meaning:
+- `--search <query>`: query-based search
+- `--list`: queryless listing
+
+Why:
+- clearer mental model
+- preserves a useful difference between “search” and “show me recent/available issues”
+
+### Should there be a compact output mode?
+
+Question:
+- is there value in a reduced list output instead of full rows?
+
+Conclusion:
+- yes, `--brief` was added
+
+Why:
+- useful for scanning, piping, copy-paste, and shell workflows
+
+### Should list rows be colorized?
+
+Question:
+- is status-based coloring worth the extra complexity?
+
+Conclusion:
+- yes, for list/search output only
+
+Why:
+- quick visual scanning is useful
+- whole-row coloring works especially well for `--brief`
+
+Constraints:
+- TTY only
+- disabled by `NO_COLOR`
+- never used for `--json`
+
+### Was `--comments` enough?
+
+Question:
+- is `--comments` sufficient, or is a comments-only view needed?
+
+Conclusion:
+- `--comments` stays
+- `--comments-only` was added
+
+Why:
+- `--comments` is useful when you want full issue context
+- `--comments-only` is useful when you only care about the comment thread
+
+### How should time tracking be exposed?
+
+Question:
+- should time tracking come from custom fields, work items, or both?
+
+Conclusion:
+- both
+
+Current modes:
+- `--spent-time`
+- `--work-items`
+
+Why:
+- they answer different questions
+- spent time is a quick summary
+- work items are the detailed record
+
+### Should linked issues stay embedded in issue detail only?
+
+Question:
+- is the link block inside issue detail enough?
+
+Conclusion:
+- no
+- add a dedicated `--linked-issues` mode
+
+Why:
+- often you want relationship structure without the rest of the issue payload
+
+### Should env var names be generic?
+
+Question:
+- should the env vars stay as generic `YOUTRACK_*` names?
+
+Conclusion:
+- no
+- use `YTISSUE_*` only
+
+Why:
+- clearer ownership
+- fewer collisions with other YouTrack tools
+- simpler long-term model
+
+## Known Uncertainties We Closed
+
+These are cases where implementation was adjusted based on real behavior rather than assumption.
+
+### Assignee source
+
+Uncertainty:
+- whether top-level `issue.assignee` is reliable enough
+
+Result:
+- it is not reliable enough on real data
+- assignee must also fall back to `customFields.Assignee`
+
+### Comments endpoint shape
+
+Uncertainty:
+- whether the original comments URL construction was correct
+
+Result:
+- it was wrong at one point because the comments path was built from an already query-stringed issue URL
+- comments now use a clean issue comments endpoint path
+
+### `YTISSUE_CONFIG` from `.env`
+
+Uncertainty:
+- whether config path env resolution would work when the env value only came from `.env`
+
+Result:
+- this initially failed because config path resolution happened too early
+- the lookup was changed so `.env` values are loaded before config path resolution
+
+## CLI Capabilities
+
+### Issue detail
+
+Examples:
+- `ytissue AB-3941`
+- `ytissue work AB-3941`
+- `ytissue -a work AB-3941`
+
+Displays:
+- id
+- summary
+- project
+- state
+- type
+- prio
+- reporter
+- assignee
+- created / updated / resolved
+- tags
+- filtered custom fields
+- filtered links
+- description
+
+Important implementation detail:
+- assignee falls back to `customFields.Assignee`
+- this was validated against a real issue where top-level `assignee` was empty
+
+### Query modes
+
+Search:
+- `ytissue --search "project: AB"`
+- `ytissue --search "for: me #Unresolved" --brief`
+
+List:
+- `ytissue --list`
+- `ytissue -a work --list --limit 20`
+
+Behavior:
+- `--search <query>` hits `GET /api/issues` with a `query` parameter
+- `--list` hits the same endpoint without a query
+
+Output:
+- default: `ID | State | Prio | Assignee | Updated` plus summary line
+- `--brief`: `ID  Summary`
+- `--json`: raw issue array
+
+### Comment modes
+
+Examples:
+- `ytissue AB-3941 --comments`
+- `ytissue AB-3941 --comments-only`
+- `ytissue AB-3941 --comments-only --json`
+
+Behavior:
+- `--comments`: issue detail plus comments appended
+- `--comments-only`: comments only
+- `--json` with `--comments-only`: returns only the comments array
+
+### Time tracking modes
+
+Examples:
+- `ytissue AB-3941 --spent-time`
+- `ytissue AB-3941 --spent-time --json`
+- `ytissue AB-3941 --work-items`
+- `ytissue AB-3941 --work-items --json`
+
+Behavior:
+- `--spent-time`: returns the `Spent time` custom field
+- `--work-items`: fetches time tracking work items via issue work items endpoint
+
+### Linked issues mode
+
+Examples:
+- `ytissue AB-3941 --linked-issues`
+- `ytissue AB-3941 --linked-issues --json`
+
+Behavior:
+- text mode filters out empty link groups
+- json mode currently returns the full raw `issue.links` array
+
+This mismatch is intentional for now only because it has not yet been cleaned up.
+
+## Config Management Commands
+
+Examples:
+- `ytissue --list-aliases`
+- `ytissue --add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default`
+- `ytissue --set-default work`
+- `ytissue --remove-alias work`
+
+Notes:
+- config writing preserves placeholder values like `${YTISSUE_WORK_TOKEN}`
+- `--set-default` works in two forms:
+  - with `--add-alias ... --set-default`
+  - standalone as `--set-default <alias>`
+
+## Officially Useful Example Commands
+
+```bash
+ytissue AB-3941
+ytissue AB-3941 --comments-only
+ytissue AB-3941 --spent-time
+ytissue AB-3941 --work-items
+ytissue AB-3941 --linked-issues
+
+ytissue --search "project: AB" --limit 20
+ytissue --search "project: AB" --brief
+ytissue --list --limit 20
+
+ytissue --list-aliases
+ytissue --config ./config.example.json --list-aliases
+```
+
+## Real-World Validation Notes
+
+Several features were validated against real Billingo YouTrack data.
+
+Reference issue used repeatedly:
+- `AB-3941`
+
+Observed on that issue:
+- top-level assignee may be empty while `customFields.Assignee` is populated
+- no comments on this issue at the time of validation
+- no work items on this issue at the time of validation
+- spent time is populated
+- linked issues are populated
+
+Validated behaviors:
+- issue detail works
+- assignee fallback works
+- search works
+- list works
+- `--brief` works
+- `--comments-only` works
+- `--spent-time` works
+- `--work-items` works
+- `--linked-issues` works
+
+Known concrete outputs from `AB-3941` at the time of testing:
+- `--spent-time` returned `3d 4h 18m`
+- `--comments-only` returned no comments
+- `--work-items` returned no work items
+
+## Known Gaps / Open Items
+
+### 1. `--linked-issues --json` cleanup
+
+Text mode already removes empty link groups.
+
+JSON mode still returns raw empty groups too.
+
+This is the clearest small cleanup left in the current linked-issues implementation.
+
+### 2. Projects listing
+
+Still not implemented.
+
+This was discussed as a good next read-only feature.
+
+Likely shape:
+- `--projects`
+
+### 3. Attachments
+
+Still not implemented.
+
+Likely staged approach:
+1. attachment metadata view
+2. only later, if needed, explicit binary download support
+
+### 4. Request timeout / abort handling
+
+Still not implemented.
+
+At the moment network calls rely on default `fetch` behavior without explicit timeouts.
+
+### 5. Documentation cleanup
+
+README is functional and current enough for use, but can still be tightened:
+- remove any low-value development detail
+- align examples around the strongest workflows
+- possibly document which outputs are raw vs filtered
+
+## Practical Guidance For The Next Thread
+
+If continuing development, recommended next priorities:
+1. clean up `--linked-issues --json` to filter empty groups too
+2. add `--projects`
+3. add attachment metadata view
+4. add timeout / abort handling
+
+If the task is mainly documentation or onboarding:
+- treat this file as the current source of truth for decisions and feature scope
+- confirm `README.md` still matches the implemented behavior before further edits
+
+## Maintenance Rule For This File
+
+This file is intended to be a living document.
+
+When updating it:
+- prefer current truth over chronological history
+- keep decisions and rationale, not every intermediate experiment
+- keep the open-items list short and prioritized
+- update validated behaviors when a real endpoint check changes assumptions
