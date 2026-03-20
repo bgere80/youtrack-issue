@@ -29,7 +29,7 @@ Options:
 
 Config sources:
   1. CLI flags
-  2. Global alias config: ~/.config/youtrack-issue/config.json
+  2. Config path: --config, YOUTRACK_CONFIG, ~/.config/youtrack-issue/config.json
   3. Environment variables: YOUTRACK_TOKEN, YOUTRACK_BASE_URL
   4. .env / .env.local in the current directory
   5. ~/.config/youtrack-issue/config.env`);
@@ -282,6 +282,22 @@ async function loadGlobalAliasConfig() {
 async function loadAliasConfigFromPath(configPath) {
   const config = await loadRawAliasConfig(path.resolve(configPath));
   return interpolateEnvInObject(config);
+}
+
+function resolveAliasConfigPath(options, fileConfig = {}) {
+  if (options.configPath) {
+    return path.resolve(options.configPath);
+  }
+
+  if (process.env.YOUTRACK_CONFIG) {
+    return path.resolve(process.env.YOUTRACK_CONFIG);
+  }
+
+  if (fileConfig.YOUTRACK_CONFIG) {
+    return path.resolve(fileConfig.YOUTRACK_CONFIG);
+  }
+
+  return path.join(getConfigDir(), 'config.json');
 }
 
 function resolveAliasConfig(globalConfig, alias) {
@@ -626,9 +642,9 @@ try {
   validateAliasName(options.alias);
   validateConfigMutationOptions(options);
 
-  const globalConfigPath = options.configPath
-    ? path.resolve(options.configPath)
-    : path.join(getConfigDir(), 'config.json');
+  const fileConfig = await loadConfig();
+  const defaultConfigPath = path.join(getConfigDir(), 'config.json');
+  const globalConfigPath = resolveAliasConfigPath(options, fileConfig);
 
   if (options.addAlias) {
     await addAliasToConfig(globalConfigPath, options);
@@ -645,9 +661,9 @@ try {
     process.exit(0);
   }
 
-  const globalAliasConfig = options.configPath
-    ? await loadAliasConfigFromPath(options.configPath)
-    : await loadGlobalAliasConfig();
+  const globalAliasConfig = globalConfigPath === defaultConfigPath
+    ? await loadGlobalAliasConfig()
+    : await loadAliasConfigFromPath(globalConfigPath);
 
   if (options.listAliases) {
     printAliases(globalAliasConfig, globalConfigPath);
@@ -659,7 +675,6 @@ try {
     process.exit(1);
   }
 
-  const fileConfig = await loadConfig();
   const defaultAlias = options.alias ? '' : resolveDefaultAlias(globalAliasConfig);
   const resolvedAlias = options.alias || defaultAlias;
   const aliasConfig = resolvedAlias ? resolveAliasConfig(globalAliasConfig, resolvedAlias) : null;

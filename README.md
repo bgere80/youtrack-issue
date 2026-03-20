@@ -25,6 +25,8 @@ EOF
 
 The CLI also reads `~/.config/youtrack-issue/config.env`.
 
+The alias config path can also be set with `YOUTRACK_CONFIG`.
+
 For reusable global aliases, create `~/.config/youtrack-issue/config.json`:
 
 ```json
@@ -62,6 +64,10 @@ YOUTRACK_WORK_TOKEN=perm-...
 ```
 
 There is also a repo example at `config.example.json`.
+
+```bash
+YOUTRACK_CONFIG=./config.example.json ytissue --list-aliases
+```
 
 ## Usage
 
