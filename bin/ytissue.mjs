@@ -39,8 +39,7 @@ Config sources:
   1. CLI flags
   2. Config path: --config, YOUTRACK_CONFIG, ~/.config/youtrack-issue/config.json
   3. Environment variables: YOUTRACK_TOKEN, YOUTRACK_BASE_URL
-  4. .env / .env.local in the current directory
-  5. ~/.config/youtrack-issue/config.env`);
+  4. ~/.config/youtrack-issue/config.env`);
 }
 
 function isDirectNodeScriptInvocation() {
