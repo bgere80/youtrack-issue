@@ -9,21 +9,21 @@ describe('ytissue projects mode', () => {
   it('parses --projects as a standalone command', () => {
     const options = parseArgs(['--projects']);
     expect(options.command).toBe('projects');
-    expect(options.alias).toBe('');
+    expect(options.profile).toBe('');
     expect(options.issueId).toBe('');
   });
 
   it('parses -p as a shorthand for --projects', () => {
     const options = parseArgs(['-p']);
     expect(options.command).toBe('projects');
-    expect(options.alias).toBe('');
+    expect(options.profile).toBe('');
     expect(options.issueId).toBe('');
   });
 
-  it('accepts a positional alias for --projects', () => {
+  it('accepts a positional profile for --projects', () => {
     const options = parseArgs(['work', '--projects']);
     expect(options.command).toBe('projects');
-    expect(options.alias).toBe('work');
+    expect(options.profile).toBe('work');
     expect(options.issueId).toBe('');
   });
 

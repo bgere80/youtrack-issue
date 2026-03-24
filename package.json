@@ -1,7 +1,7 @@
 {
   "name": "youtrack-issue",
   "version": "0.2.0",
-  "description": "Standalone CLI for reading YouTrack issues, queries, projects, and local alias config",
+  "description": "Standalone CLI for reading YouTrack issues, queries, projects, and local profile config",
   "type": "module",
   "files": [
     "bin",

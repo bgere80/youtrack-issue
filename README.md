@@ -1,6 +1,6 @@
 # youtrack-issue
 
-Standalone CLI for reading YouTrack issues, queries, projects, and local alias config.
+Standalone CLI for reading YouTrack issues, queries, projects, and local profile config.
 
 Contributing notes: see `CONTRIBUTING.md`.
 
@@ -35,12 +35,12 @@ export YTISSUE_BASE_URL="https://youtrack.example.com"
 ytissue AB-1234
 ```
 
-With a global alias config in `~/.config/youtrack-issue/config.json`:
+With a global profile config in `~/.config/youtrack-issue/config.json`:
 
 ```json
 {
-  "defaultAlias": "work",
-  "aliases": {
+  "defaultProfile": "work",
+  "profiles": {
     "work": {
       "baseUrl": "https://youtrack.example.com",
       "token": "paste-your-token-here"
@@ -54,8 +54,10 @@ Then:
 ```bash
 ytissue AB-1234
 ytissue work AB-1234
-ytissue -a work AB-1234
+ytissue --profile work AB-1234
 ```
+
+`profile` is the preferred term going forward. For backward compatibility, the CLI still accepts the older `--alias` flag and the legacy `aliases` / `defaultAlias` config shape.
 
 ## Configuration
 
@@ -82,8 +84,8 @@ Any string value in the JSON config may reference environment variables:
 
 ```json
 {
-  "defaultAlias": "${YTISSUE_DEFAULT_ALIAS}",
-  "aliases": {
+  "defaultProfile": "${YTISSUE_DEFAULT_PROFILE}",
+  "profiles": {
     "work": {
       "baseUrl": "${YTISSUE_WORK_BASE_URL}",
       "token": "${YTISSUE_WORK_TOKEN}"
@@ -93,6 +95,12 @@ Any string value in the JSON config may reference environment variables:
 ```
 
 When invoked as a global command, the CLI does not read the current directory `.env` files. Current-directory `.env` / `.env.local` loading only applies to direct script execution such as `node ./bin/ytissue.mjs ...`.
+
+Compatibility note:
+
+- `--alias` is still accepted as a legacy synonym for `--profile`
+- the short `-a` flag is no longer supported
+- `-a` was intentionally retired so the short-option space remains available for future CLI growth
 
 ## Common Commands
 
@@ -128,17 +136,26 @@ ytissue -bs "project: AB" -n 20
 Config management:
 
 ```bash
+ytissue config list-profiles
+ytissue config add-profile work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
+ytissue config set-default work
+ytissue config remove-profile work
+```
+
+Legacy compatibility is still supported:
+
+```bash
+ytissue --alias work AB-1234
 ytissue config list-aliases
 ytissue config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default
-ytissue config set-default work
 ytissue config remove-alias work
 ```
 
 Custom config path:
 
 ```bash
-ytissue -c ./config.example.json config list-aliases
-ytissue -c ./config.example.json -a work AB-1234
+ytissue -c ./config.example.json config list-profiles
+ytissue -c ./config.example.json --profile work AB-1234
 ```
 
 ## Help

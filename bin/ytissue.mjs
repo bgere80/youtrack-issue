@@ -7,23 +7,23 @@ import process from 'node:process';
 import {
   parseArgs,
   printUsage,
-  validateAliasName,
+  validateProfileName,
   validateConfigMutationOptions,
   validateQueryOptions
 } from '../lib/cli.mjs';
 import {
-  addAliasToConfig,
-  exitUnknownAlias,
+  addProfileToConfig,
+  exitUnknownProfile,
   getConfigDir,
-  loadAliasConfigFromPath,
+  loadProfileConfigFromPath,
   loadConfig,
-  loadGlobalAliasConfig,
-  printAliases,
-  removeAliasFromConfig,
-  resolveAliasConfig,
-  resolveAliasConfigPath,
-  resolveDefaultAlias,
-  setDefaultAliasInConfig
+  loadGlobalProfileConfig,
+  printProfiles,
+  removeProfileFromConfig,
+  resolveProfileConfig,
+  resolveProfileConfigPath,
+  resolveDefaultProfile,
+  setDefaultProfileInConfig
 } from '../lib/config.mjs';
 import {
   HEADER_FIELD_NAMES,
@@ -63,42 +63,42 @@ try {
   }
 
   const options = parseArgs(args);
-  validateAliasName(options.alias);
+  validateProfileName(options.profile);
   validateConfigMutationOptions(options);
   validateQueryOptions(options);
 
   const fileConfig = await loadConfig();
   const defaultConfigPath = `${getConfigDir()}/config.json`;
-  const globalConfigPath = resolveAliasConfigPath(options, fileConfig);
+  const globalConfigPath = resolveProfileConfigPath(options, fileConfig);
 
-  const globalAliasConfig = globalConfigPath === defaultConfigPath
-    ? await loadGlobalAliasConfig()
-    : await loadAliasConfigFromPath(globalConfigPath);
+  const globalProfileConfig = globalConfigPath === defaultConfigPath
+    ? await loadGlobalProfileConfig()
+    : await loadProfileConfigFromPath(globalConfigPath);
 
   if (options.mode === 'config') {
-    if (options.addAlias) {
-      await addAliasToConfig(globalConfigPath, options);
+    if (options.addProfile) {
+      await addProfileToConfig(globalConfigPath, options);
       process.exit(0);
     }
 
-    if (options.setDefaultAlias) {
-      await setDefaultAliasInConfig(globalConfigPath, options);
+    if (options.setDefaultProfile) {
+      await setDefaultProfileInConfig(globalConfigPath, options);
       process.exit(0);
     }
 
-    if (options.removeAlias) {
-      await removeAliasFromConfig(globalConfigPath, options);
+    if (options.removeProfile) {
+      await removeProfileFromConfig(globalConfigPath, options);
       process.exit(0);
     }
 
-    if (options.listAliases) {
-      printAliases(globalAliasConfig, globalConfigPath);
+    if (options.listProfiles) {
+      printProfiles(globalProfileConfig, globalConfigPath);
       process.exit(0);
     }
   }
 
-  if (options.listAliases) {
-    printAliases(globalAliasConfig, globalConfigPath);
+  if (options.listProfiles) {
+    printProfiles(globalProfileConfig, globalConfigPath);
     process.exit(0);
   }
 
@@ -107,24 +107,24 @@ try {
     process.exit(1);
   }
 
-  const defaultAlias = options.alias ? '' : resolveDefaultAlias(globalAliasConfig);
-  const resolvedAlias = options.alias || defaultAlias;
-  const aliasConfig = resolvedAlias ? resolveAliasConfig(globalAliasConfig, resolvedAlias) : null;
+  const defaultProfile = options.profile ? '' : resolveDefaultProfile(globalProfileConfig);
+  const resolvedProfile = options.profile || defaultProfile;
+  const profileConfig = resolvedProfile ? resolveProfileConfig(globalProfileConfig, resolvedProfile) : null;
 
-  if (resolvedAlias && !aliasConfig) {
-    exitUnknownAlias(resolvedAlias, globalConfigPath);
+  if (resolvedProfile && !profileConfig) {
+    exitUnknownProfile(resolvedProfile, globalConfigPath);
   }
 
-  const token = aliasConfig?.token || process.env.YTISSUE_TOKEN || fileConfig.YTISSUE_TOKEN || '';
-  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YTISSUE_BASE_URL || fileConfig.YTISSUE_BASE_URL || '';
+  const token = profileConfig?.token || process.env.YTISSUE_TOKEN || fileConfig.YTISSUE_TOKEN || '';
+  const baseUrl = options.baseUrl || profileConfig?.baseUrl || process.env.YTISSUE_BASE_URL || fileConfig.YTISSUE_BASE_URL || '';
 
   if (!token) {
-    console.error('Missing YTISSUE_TOKEN. Set it via alias config, env var, or config file.');
+    console.error('Missing YTISSUE_TOKEN. Set it via profile config, env var, or config file.');
     process.exit(1);
   }
 
   if (!baseUrl) {
-    console.error('Missing YTISSUE_BASE_URL. Set it via alias config, env var, or config file.');
+    console.error('Missing YTISSUE_BASE_URL. Set it via profile config, env var, or config file.');
     process.exit(1);
   }
 

@@ -1,6 +1,6 @@
 {
-  "defaultAlias": "work",
-  "aliases": {
+  "defaultProfile": "work",
+  "profiles": {
     "work": {
       "baseUrl": "https://youtrack.example.com",
       "token": "paste-your-token-here"

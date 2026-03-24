@@ -1,6 +1,6 @@
 {
-  "defaultAlias": "test",
-  "aliases": {
+  "defaultProfile": "test",
+  "profiles": {
     "test": {
       "baseUrl": "https://youtrack.example.com",
       "token": "perm-test-token"

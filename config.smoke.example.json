@@ -1,6 +1,6 @@
 {
-  "defaultAlias": "smoke",
-  "aliases": {
+  "defaultProfile": "smoke",
+  "profiles": {
     "smoke": {
       "baseUrl": "https://youtrack.example.com",
       "token": "paste-your-token-here"

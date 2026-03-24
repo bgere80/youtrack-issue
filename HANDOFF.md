@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository contains a standalone, native-dependency-free Node CLI for reading YouTrack data by issue ID or query, plus managing local alias configuration.
+This repository contains a standalone, native-dependency-free Node CLI for reading YouTrack data by issue ID or query, plus managing local profile configuration.
 
 Primary goals:
 - global CLI usage via `ytissue` and `youtrack-issue`
@@ -32,7 +32,7 @@ Main files:
 Local-only file:
 - `config.smoke.json`
   - intentionally ignored
-  - intended for local smoke tests, local alias setups, and real tokens
+  - intended for local smoke tests, local profile setups, and real tokens
 
 Global install:
 - `npm link` has been used successfully
@@ -42,7 +42,7 @@ Global install:
 
 ### Current scope: read-oriented issue access with local config management
 
-The current implementation focuses on read-oriented YouTrack workflows, while also supporting local alias/config management commands.
+The current implementation focuses on read-oriented YouTrack workflows, while also supporting local profile/config management commands.
 
 Out of scope for now:
 - create issue
@@ -55,8 +55,8 @@ This is a current scope decision, not a permanent product boundary.
 ### Config model
 
 The CLI supports:
-- alias-based config
-- a default alias
+- profile-based config
+- a default profile
 - env vars
 - direct overrides via flags
 - config management via the `config` subcommand
@@ -72,12 +72,12 @@ Environment file loading:
 - both direct and global invocation read `~/.config/youtrack-issue/config.env`
 - `config.env` may also provide `YTISSUE_CONFIG`, `YTISSUE_TOKEN`, `YTISSUE_BASE_URL`, and `YTISSUE_TIMEOUT_MS`
 
-Alias example:
+Profile example:
 
 ```json
 {
-  "defaultAlias": "work",
-  "aliases": {
+  "defaultProfile": "work",
+  "profiles": {
     "work": {
       "baseUrl": "https://youtrack.example.com",
       "token": "paste-your-token-here"
@@ -120,16 +120,16 @@ Final decision:
   - `--list`
 
 Reason:
-- avoids conflicts with alias names like `list`
+- avoids conflicts with profile names like `list`
 - keeps the CLI consistently flag-oriented
 
 ### Config command UX
 
 Config management now lives under a dedicated subcommand:
-- `ytissue config list-aliases`
-- `ytissue config add-alias ...`
+- `ytissue config list-profiles`
+- `ytissue config add-profile ...`
 - `ytissue config set-default ...`
-- `ytissue config remove-alias ...`
+- `ytissue config remove-profile ...`
 
 Reason:
 - keeps read/query flows separate from config mutation
@@ -141,7 +141,6 @@ Reason:
 ### Short flags
 
 Frequently used read/query options now have short aliases:
-- `-a` for `--alias`
 - `-b` for `--brief`
 - `-c` for `--config`
 - `-f` for `--field`
@@ -151,6 +150,8 @@ Frequently used read/query options now have short aliases:
 - `-n` for `--limit`
 - `-p` for `--projects`
 - `-s` for `--search`
+
+`--profile <name>` is available as a long option only because `-p` is already used by `--projects`.
 
 Boolean short flags can be grouped, and a grouped sequence may end with one short option that takes a value.
 
@@ -200,17 +201,17 @@ Question:
 Options considered:
 - env vars only
 - local `.env`
-- global alias config
+- global profile config
 
 Conclusion:
 - keep env vars
-- add global alias config
-- support `defaultAlias`
+- add global profile config
+- support `defaultProfile`
 - support explicit `--config`
 
 Why:
 - env vars are convenient for quick or CI use
-- aliases are much better for daily usage across one or more YouTrack instances
+- profiles are much better for daily usage across one or more YouTrack instances
 
 ### Should `.env` be used by the global CLI?
 
@@ -257,7 +258,7 @@ Conclusion:
 - `--list`
 
 Why:
-- avoids alias-name collisions
+- avoids profile-name collisions
 - fits the rest of the CLI better
 - keeps issue lookup as the default positional mode
 
@@ -593,16 +594,16 @@ Behavior:
 ## Config Management Commands
 
 Examples:
-- `ytissue config list-aliases`
-- `ytissue config add-alias work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default`
+- `ytissue config list-profiles`
+- `ytissue config add-profile work --base-url https://youtrack.example.com --token '${YTISSUE_WORK_TOKEN}' --set-default`
 - `ytissue config set-default work`
-- `ytissue config remove-alias work`
+- `ytissue config remove-profile work`
 
 Notes:
 - config writing preserves placeholder values like `${YTISSUE_WORK_TOKEN}`
 - `--set-default` works in two forms:
-  - with `config add-alias ... --set-default`
-  - standalone as `config set-default <alias>`
+  - with `config add-profile ... --set-default`
+  - standalone as `config set-default <profile>`
 
 ## Officially Useful Example Commands
 
@@ -621,8 +622,8 @@ ytissue --projects --limit 20
 ytissue -bs "project: AB" -n 20
 ytissue -lbn 20
 
-ytissue config list-aliases
-ytissue --config ./config.example.json config list-aliases
+ytissue config list-profiles
+ytissue --config ./config.example.json config list-profiles
 ```
 
 ## Real-World Validation Notes
