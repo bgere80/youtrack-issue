@@ -115,10 +115,27 @@ ytissue AB-1234 --linked-issues
 ytissue AB-1234 --spent-time
 ytissue AB-1234 --work-items
 ytissue AB-1234 --attachments
-ytissue AB-1234 --download-attachment invoice.pdf
+ytissue AB-1234 --attachment-info invoice.pdf
+ytissue AB-1234 --attachment-info invoice.pdf --json
+ytissue AB-1234 --download-attachment invoice.pdf --output ./invoice.pdf
+ytissue AB-1234 --download-attachment invoice.pdf --stdout > invoice.pdf
 ytissue AB-1234 --fields
 ytissue AB-1234 --field summary --field "Spent time"
 ```
+
+File output rule:
+
+- file-writing actions require an explicit output target
+- use exactly one of `--output <path>` or `--stdout`
+- `--download-attachment` without one of those flags fails with an error
+- `--download-attachment` always means attachment content; `--json` is ignored in that mode
+
+Compatibility note:
+
+- previous versions saved `--download-attachment` output automatically into the current working directory
+- that implicit default save behavior has been removed
+- downloads now require an explicit `--output <path>` or `--stdout`
+- if you previously used `--download-attachment ... --json` for metadata, use `--attachment-info <id-or-name> --json` instead
 
 Queries and projects:
 

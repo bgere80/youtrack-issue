@@ -392,10 +392,12 @@ Conclusion:
 
 Current modes:
 - `--attachments`
+- `--attachment-info <id-or-name>`
 - `--download-attachment <id-or-name>`
 
 Why:
 - listing is useful for discovery
+- attachment-info is useful for one-item metadata lookup
 - direct download removes a common manual step
 - exact ID or exact file name matching keeps the UX simple
 
@@ -564,18 +566,25 @@ Behavior:
 Examples:
 - `ytissue AB-3941 --attachments`
 - `ytissue AB-3941 --attachments --json`
-- `ytissue AB-3941 --download-attachment invoice.pdf`
+- `ytissue AB-3941 --attachment-info invoice.pdf`
+- `ytissue AB-3941 --attachment-info invoice.pdf --json`
+- `ytissue AB-3941 --download-attachment invoice.pdf --output ./invoice.pdf`
+- `ytissue AB-3941 --download-attachment invoice.pdf --stdout > invoice.pdf`
 
 Behavior:
 - `--attachments` hits `GET /api/issues/{issueID}/attachments`
 - default text mode prints attachment id, size, MIME type, author, and created timestamp
 - `--brief`: `ID  FileName`
 - `--json`: raw attachment array
-- `--download-attachment <id-or-name>` downloads the matching attachment into the current working directory
+- `--attachment-info <id-or-name>` returns one attachment's metadata by exact ID or exact file name
+- `--attachment-info --json` returns that one attachment object
+- `--download-attachment <id-or-name>` requires exactly one explicit output target
+- supported output targets are `--output <path>` and `--stdout`
+- `--download-attachment` always means attachment content; `--json` is ignored in that mode
 - download matching accepts an exact attachment ID or exact file name
 - download refuses ambiguous name matches
-- download currently writes to cwd under the original attachment filename
-- download currently uses exclusive file creation and does not overwrite existing files
+- `--output <path>` uses exclusive file creation and does not overwrite existing files
+- `--stdout` writes raw attachment bytes to standard output
 
 ### Projects mode
 
@@ -694,7 +703,6 @@ These are ideas, not committed roadmap items.
 Current implementation is intentionally minimal.
 
 Still open:
-- whether download should support an explicit output path
 - whether attachment name matching should stay exact-only or allow friendlier selection
 - whether batch download is worth supporting
 

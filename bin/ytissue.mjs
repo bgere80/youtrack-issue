@@ -187,11 +187,32 @@ try {
   }
 
   let attachments = [];
-  if (options.attachments || options.downloadAttachment) {
+  if (options.attachments || options.attachmentInfo || options.downloadAttachment) {
     attachments = await loadAttachments(baseUrl, options.issueId, token);
   }
 
   if (options.command === 'attachments') {
+    if (options.attachmentInfo) {
+      const { attachment, error } = resolveAttachment(attachments, options.attachmentInfo);
+      if (!attachment) {
+        console.error(error);
+        process.exit(1);
+      }
+
+      if (options.json) {
+        console.log(JSON.stringify(attachment, null, 2));
+        process.exit(0);
+      }
+
+      if (options.brief) {
+        console.log(formatBriefAttachment(attachment));
+        process.exit(0);
+      }
+
+      console.log(formatAttachment(attachment));
+      process.exit(0);
+    }
+
     if (options.downloadAttachment) {
       const { attachment, error } = resolveAttachment(attachments, options.downloadAttachment);
       if (!attachment) {
@@ -199,22 +220,17 @@ try {
         process.exit(1);
       }
 
-      const targetFileName = path.basename(attachment.name || attachment.id || 'attachment.bin');
-      const targetPath = path.resolve(process.cwd(), targetFileName);
-      const { content, url } = await downloadAttachment(baseUrl, attachment, token);
-      await writeFile(targetPath, content, { flag: 'wx' });
+      const { content } = await downloadAttachment(baseUrl, attachment, token);
 
-      if (options.json) {
-        console.log(JSON.stringify({
-          attachmentId: attachment.id,
-          fileName: targetFileName,
-          path: targetPath,
-          url
-        }, null, 2));
+      if (options.stdout) {
+        process.stdout.write(content);
         process.exit(0);
       }
 
-      console.log(`Downloaded ${targetFileName}`);
+      const targetPath = path.resolve(options.outputPath);
+      await writeFile(targetPath, content, { flag: 'wx' });
+
+      console.log(`Downloaded ${path.basename(targetPath)}`);
       console.log(targetPath);
       process.exit(0);
     }

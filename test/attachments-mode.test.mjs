@@ -42,9 +42,16 @@ describe('ytissue attachments mode', () => {
   });
 
   it('parses --download-attachment for a single issue', () => {
-    const options = parseArgs(['AB-3941', '--download-attachment', 'invoice.pdf']);
+    const options = parseArgs(['AB-3941', '--download-attachment', 'invoice.pdf', '--output', './invoice.pdf']);
     expect(options.command).toBe('attachments');
     expect(options.downloadAttachment).toBe('invoice.pdf');
+    expect(options.outputPath).toBe('./invoice.pdf');
+  });
+
+  it('parses --attachment-info for a single issue', () => {
+    const options = parseArgs(['AB-3941', '--attachment-info', 'invoice.pdf']);
+    expect(options.command).toBe('attachments');
+    expect(options.attachmentInfo).toBe('invoice.pdf');
   });
 
   it('requires an issue ID for attachments mode', () => {
@@ -91,10 +98,107 @@ describe('ytissue attachments mode', () => {
         comments: false,
         commentsOnly: false,
         downloadAttachment: 'invoice.pdf',
+        outputPath: './invoice.pdf',
         fieldsRequested: false,
         fieldNames: [],
         linkedIssues: false,
+        json: false,
         spentTime: false,
+        stdout: false,
+        workItems: false
+      })).toThrow('process.exit:1');
+    } finally {
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('rejects mixing attachment info and download modes', () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`process.exit:${code}`);
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      expect(() => validateQueryOptions({
+        mode: 'issue',
+        command: 'attachments',
+        issueId: 'AB-3941',
+        query: '',
+        attachments: false,
+        attachmentInfo: 'invoice.pdf',
+        comments: false,
+        commentsOnly: false,
+        downloadAttachment: 'invoice.pdf',
+        outputPath: './invoice.pdf',
+        fieldsRequested: false,
+        fieldNames: [],
+        linkedIssues: false,
+        json: false,
+        spentTime: false,
+        stdout: false,
+        workItems: false
+      })).toThrow('process.exit:1');
+    } finally {
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('requires an explicit output target for attachment download', () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`process.exit:${code}`);
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      expect(() => validateQueryOptions({
+        mode: 'issue',
+        command: 'attachments',
+        issueId: 'AB-3941',
+        query: '',
+        attachments: false,
+        comments: false,
+        commentsOnly: false,
+        downloadAttachment: 'invoice.pdf',
+        outputPath: '',
+        fieldsRequested: false,
+        fieldNames: [],
+        linkedIssues: false,
+        json: false,
+        spentTime: false,
+        stdout: false,
+        workItems: false
+      })).toThrow('process.exit:1');
+    } finally {
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('rejects multiple output targets for attachment download', () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`process.exit:${code}`);
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      expect(() => validateQueryOptions({
+        mode: 'issue',
+        command: 'attachments',
+        issueId: 'AB-3941',
+        query: '',
+        attachments: false,
+        comments: false,
+        commentsOnly: false,
+        downloadAttachment: 'invoice.pdf',
+        outputPath: './invoice.pdf',
+        fieldsRequested: false,
+        fieldNames: [],
+        linkedIssues: false,
+        json: false,
+        spentTime: false,
+        stdout: true,
         workItems: false
       })).toThrow('process.exit:1');
     } finally {
