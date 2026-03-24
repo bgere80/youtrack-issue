@@ -53,6 +53,93 @@ Out of scope for now:
 
 This is a current scope decision, not a permanent product boundary.
 
+### Future write-feature direction
+
+If and when the CLI expands into write-oriented issue workflows, the current preferred direction is:
+
+- keep read-only features as top-level flags
+- keep issue-dependent features attached to an issue ID
+- keep issue-dependent write actions as flags next to the issue ID
+- use subcommands only for issue-independent write actions
+
+This preserves the current mental model that the CLI is centered around a single issue by default.
+
+Examples of the intended shape:
+
+```bash
+ytissue AB-1234
+ytissue AB-1234 --comments
+ytissue AB-1234 --apply "Assignee me"
+ytissue AB-1234 --comment "Needs follow-up"
+ytissue AB-1234 --set-field State="In Progress"
+
+ytissue --list
+ytissue --search "project: AB"
+ytissue --projects
+
+ytissue create --project AB --summary "New issue"
+ytissue apply --query "project: AB #Unresolved" "Assignee me"
+```
+
+Current naming preference for the YouTrack command-style mutation flow:
+
+- use `apply` rather than `command`
+
+Reason:
+- `apply` reads better as a user-facing verb
+- it works both for single-issue and multi-issue/query-based mutation
+- `command` is still an implementation/API concept, but is not preferred as the CLI-facing name
+
+If write features are added later, the likely first candidates are:
+- `create` as an issue-independent subcommand
+- `apply` as both:
+  - an issue-dependent flag, for example `ytissue AB-1234 --apply "..."`
+  - an issue-independent subcommand, for example `ytissue apply --query "..." "..."`
+- issue-dependent flags for specific mutations such as comment add, field set, attachment upload, and work-item add
+
+Planned stdin convention for future write features:
+
+- use a shared `--stdin` switch for text payload input, similar in spirit to the existing `--stdout`
+- `--stdin` must appear immediately after the option whose value should be read from standard input
+- the option using `--stdin` should not also receive an inline value
+- the `--stdin`-using option should be the last write-input option in the command
+- a bare `-` should also be accepted as a shorthand stdin marker for text-taking options, for example `--description -`
+- the explicit and shorthand forms should be mutually exclusive for the same option, for example `--description --stdin -` or `--description - --stdin` should fail
+- `--stdin` and bare `-` should only have special stdin meaning for options that explicitly support text input from stdin
+- if stdin mode is requested but there is no single unambiguous owning option immediately before it, validation should fail
+
+Examples:
+
+```bash
+ytissue create --project AB --summary "New issue" --description --stdin
+ytissue AB-1234 --comment --stdin
+ytissue AB-1234 --apply --stdin
+ytissue create --project AB --summary "New issue" --description -
+```
+
+This is preferred over implicit stdin behavior because it is more explicit, easier to validate, and easier to document.
+
+Planned stdout convention for generated output modes:
+
+- `--stdout` should appear immediately after the option that produces the streamed output
+- the option using `--stdout` should not also use a conflicting file-output target
+- the `--stdout`-using option should be the last output-producing option pair in the command
+- `--output -` and `-o -` should be accepted as shorthand forms meaning stdout
+- the explicit and shorthand forms should be mutually exclusive for the same output-producing option, for example `--output - --stdout` should fail
+- `--stdout` and `--output -` should only have special stdout meaning for options that explicitly support streamed output
+- if stdout mode is requested but there is no single unambiguous owning option immediately before it, validation should fail
+
+Example:
+
+```bash
+ytissue AB-1234 --download-attachment invoice.pdf --stdout
+ytissue AB-1234 --download-attachment invoice.pdf --output -
+```
+
+This follows the same attachment rule as `--stdin`: the I/O modifier stays tightly coupled to the option it modifies.
+
+This is a future-direction note only. It does not change the current scope decision above.
+
 ### Config model
 
 The CLI supports:
@@ -205,6 +292,11 @@ Why:
 - write workflows would add much more UX and safety complexity
 - current development focus is still on the read side of YouTrack data access
 - local config file management is already intentionally supported
+
+Follow-up conclusion for a future write phase:
+- keep read-only UX at top level
+- keep issue-scoped write actions as issue flags
+- reserve subcommands for issue-independent write flows such as `create` and bulk/query-based `apply`
 
 ### Should we rely on env vars only, or add config?
 
