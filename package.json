@@ -24,8 +24,8 @@
     "jetbrains"
   ],
   "bin": {
-    "youtrack-issue": "./bin/ytissue.mjs",
-    "ytissue": "./bin/ytissue.mjs"
+    "youtrack-issue": "bin/ytissue.mjs",
+    "ytissue": "bin/ytissue.mjs"
   },
   "scripts": {
     "youtrack-issue": "node ./bin/ytissue.mjs",
