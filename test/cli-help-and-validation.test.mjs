@@ -23,6 +23,12 @@ describe('ytissue CLI help and validation', () => {
     expect(result.stdout).toMatch(/Usage: youtrack-issue \[options] <ISSUE-ID>/);
   });
 
+  it('prints version', async () => {
+    const result = await runCli(['--version']);
+    expectSuccess(result);
+    expect(result.stdout.trim()).toBe('0.3.2');
+  });
+
   it('lists profiles from config.test.json', async () => {
     const result = await runCli(['-c', configPath, 'config', 'list-profiles']);
     expectSuccess(result);
