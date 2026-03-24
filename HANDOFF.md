@@ -670,12 +670,14 @@ Known concrete outputs from `AB-3941` at the time of testing:
 ### 1. Release automation
 
 Current state:
-- the package is technically publish-ready
-- manual npm publish currently requires a temporary granular token with `bypass 2FA`
+- npm publishing is automated through GitHub Actions Trusted Publishing
+- publish workflow lives at `.github/workflows/publish.yml`
+- tag-based release flow validates that `package.json` matches the pushed `v*` tag before publishing
+- publish job uses the `npm-publish` GitHub Actions environment so approval can gate the final publish step
 
 Remaining issue:
-- there is no Trusted Publishing setup yet
-- release publishing is still a manual step
+- npm Trusted Publisher still needs to be configured once in the npm package settings if that has not already been done
+- GitHub should also have `v*` tag restrictions and the `npm-publish` environment reviewer configured
 
 ### 2. Local smoke workflow
 
@@ -709,7 +711,7 @@ Still open:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. decide whether to keep manual npm publishing or add Trusted Publishing
+1. complete the one-time npm Trusted Publisher setup and GitHub release protections if they are not yet configured
 2. consider higher-level history/activity views
 3. revisit attachment UX follow-ups if they become painful in real usage
 
