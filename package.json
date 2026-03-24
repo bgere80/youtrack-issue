@@ -1,6 +1,6 @@
 {
   "name": "youtrack-issue",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Standalone CLI for reading YouTrack issues, queries, projects, and local profile config",
   "type": "module",
   "files": [
