@@ -1,11 +1,15 @@
 import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 
 import { describe, expect, it } from 'vitest';
 
 import { configPath, expectFailure, expectSuccess, runCli } from './helpers.mjs';
 import { parseArgs } from '../lib/cli.mjs';
+
+const require = createRequire(import.meta.url);
+const { version: packageVersion } = require('../package.json');
 
 describe('ytissue CLI help and validation', () => {
   it('prints the same help text for no args as for -h, with different exit codes', async () => {
@@ -26,7 +30,7 @@ describe('ytissue CLI help and validation', () => {
   it('prints version', async () => {
     const result = await runCli(['--version']);
     expectSuccess(result);
-    expect(result.stdout.trim()).toBe('0.3.2');
+    expect(result.stdout.trim()).toBe(packageVersion);
   });
 
   it('lists profiles from config.test.json', async () => {
