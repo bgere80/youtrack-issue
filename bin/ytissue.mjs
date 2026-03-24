@@ -54,7 +54,6 @@ import {
   resolveAssignee
 } from '../lib/youtrack.mjs';
 
-const DEFAULT_BASE_URL = 'https://youtrack.billingo.com';
 const args = process.argv.slice(2);
 
 try {
@@ -117,10 +116,15 @@ try {
   }
 
   const token = aliasConfig?.token || process.env.YTISSUE_TOKEN || fileConfig.YTISSUE_TOKEN || '';
-  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YTISSUE_BASE_URL || fileConfig.YTISSUE_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = options.baseUrl || aliasConfig?.baseUrl || process.env.YTISSUE_BASE_URL || fileConfig.YTISSUE_BASE_URL || '';
 
   if (!token) {
     console.error('Missing YTISSUE_TOKEN. Set it via alias config, env var, or config file.');
+    process.exit(1);
+  }
+
+  if (!baseUrl) {
+    console.error('Missing YTISSUE_BASE_URL. Set it via alias config, env var, or config file.');
     process.exit(1);
   }
 

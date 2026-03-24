@@ -19,7 +19,7 @@ export async function runCli(args, options = {}) {
 
   try {
     const result = await execFileAsync(process.execPath, [cliPath, ...args], {
-      cwd: repoRoot,
+      cwd: options.cwd ?? repoRoot,
       env: {
         ...process.env,
         NO_COLOR: '1',
