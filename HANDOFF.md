@@ -21,9 +21,13 @@ Main files:
 - `bin/ytissue.mjs`: CLI implementation
 - `package.json`: package metadata and `bin` mapping
 - `README.md`: user-facing documentation
+- `LICENSE`: MIT license
+- `CONTRIBUTING.md`: contributor setup and local smoke-test guidance
 - `config.example.json`: safe example config committed to the repo
+- `config.test.json`: committed offline test config with safe placeholder values
 - `config.smoke.example.json`: example config for local smoke testing
 - `test/local.smoke.example.mjs`: example local smoke tests for real-server checks
+- `.github/workflows/ci.yml`: offline CI workflow
 
 Local-only file:
 - `config.smoke.json`
@@ -653,22 +657,26 @@ Known concrete outputs from `AB-3941` at the time of testing:
 
 ## Known Gaps / Open Items
 
-### 1. Test strategy cleanup
+### 1. Release automation
 
 Current state:
-- `npm test` runs only the committed offline/unit-style suite
-- real-server checks are intentionally local-only and are not committed as shared tests
-- `npm run test:smoke` runs ignored `test/*.smoke.test.mjs` files when they exist
+- the package is technically publish-ready
+- manual npm publish currently requires a temporary granular token with `bypass 2FA`
 
 Remaining issue:
-- the local smoke workflow still needs README-level documentation
+- there is no Trusted Publishing setup yet
+- release publishing is still a manual step
+
+### 2. Local smoke workflow
+
+Current state:
+- `npm test` runs only the committed offline suite
+- real-server checks are intentionally local-only
+- `npm run test:smoke` runs ignored `test/*.smoke.test.mjs` files when they exist
+- README and CONTRIBUTING both describe the smoke-test model
+
+Remaining issue:
 - smoke expectations remain environment-specific by design, so they should stay lightweight
-
-### 2. Documentation cleanup
-
-README is functional and current enough for use, but can still be tightened:
-- remove any low-value development detail
-- possibly document which outputs are raw vs filtered
 
 ### 3. Higher-level read-only features worth considering
 
@@ -692,9 +700,9 @@ Still open:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. separate offline tests from real-network integration tests
-2. tighten README output-mode documentation
-3. consider higher-level history/activity views
+1. decide whether to keep manual npm publishing or add Trusted Publishing
+2. consider higher-level history/activity views
+3. revisit attachment UX follow-ups if they become painful in real usage
 
 If the task is mainly documentation or onboarding:
 - treat this file as the current source of truth for decisions and feature scope
