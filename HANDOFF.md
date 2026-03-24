@@ -22,12 +22,13 @@ Main files:
 - `package.json`: package metadata and `bin` mapping
 - `README.md`: user-facing documentation
 - `LICENSE`: MIT license
-- `CONTRIBUTING.md`: contributor setup and local smoke-test guidance
+- `CONTRIBUTING.md`: contributor setup, local smoke-test guidance, and maintainer publish flow
 - `config.example.json`: safe example config committed to the repo
 - `config.test.json`: committed offline test config with safe placeholder values
 - `config.smoke.example.json`: example config for local smoke testing
 - `test/local.smoke.example.mjs`: example local smoke tests for real-server checks
 - `.github/workflows/ci.yml`: offline CI workflow
+- `.github/workflows/publish.yml`: tag-based npm publish workflow via Trusted Publishing
 
 Local-only file:
 - `config.smoke.json`
@@ -148,10 +149,13 @@ Frequently used read/query options now have short aliases:
 - `-j` for `--json`
 - `-l` for `--list`
 - `-n` for `--limit`
+- `-o` for `--output`
 - `-p` for `--projects`
 - `-s` for `--search`
+- `-v` for `--version`
 
 `--profile <name>` is available as a long option only because `-p` is already used by `--projects`.
+Legacy `--alias <name>` is still accepted as a synonym for `--profile`, but short `-a` support was intentionally removed.
 
 Boolean short flags can be grouped, and a grouped sequence may end with one short option that takes a value.
 
@@ -174,6 +178,15 @@ List/search rows are colorized by state:
 - only on TTY
 - disabled by `NO_COLOR`
 - not used for `--json`
+
+### Documentation split
+
+Current rule:
+- `README.md` is for end users
+- `CONTRIBUTING.md` is for contributors and maintainers
+
+Implication:
+- maintainer-only release and publish instructions belong in `CONTRIBUTING.md`, not in `README.md`
 
 ## Questions We Resolved
 
@@ -401,6 +414,24 @@ Why:
 - direct download removes a common manual step
 - exact ID or exact file name matching keeps the UX simple
 
+### Should downloads choose their own output path?
+
+Question:
+- should attachment download default to saving into the current working directory?
+
+Conclusion:
+- no
+- file-writing actions should require an explicit output target
+
+Current model:
+- `--download-attachment <id-or-name> --output <path>`
+- `--download-attachment <id-or-name> --stdout`
+
+Why:
+- avoids surprising filesystem side effects
+- leaves file naming and overwrite policy under caller control
+- fits typical Unix CLI expectations better
+
 ### Should env var names be generic?
 
 Question:
@@ -472,7 +503,8 @@ Result:
 Examples:
 - `ytissue AB-3941`
 - `ytissue work AB-3941`
-- `ytissue -a work AB-3941`
+- `ytissue --profile work AB-3941`
+- `ytissue --alias work AB-3941`
 
 Displays:
 - id
@@ -501,7 +533,7 @@ Search:
 
 List:
 - `ytissue --list`
-- `ytissue -a work --list --limit 20`
+- `ytissue --profile work --list --limit 20`
 
 Behavior:
 - `--search <query>` hits `GET /api/issues` with a `query` parameter
@@ -568,7 +600,7 @@ Examples:
 - `ytissue AB-3941 --attachments --json`
 - `ytissue AB-3941 --attachment-info invoice.pdf`
 - `ytissue AB-3941 --attachment-info invoice.pdf --json`
-- `ytissue AB-3941 --download-attachment invoice.pdf --output ./invoice.pdf`
+- `ytissue AB-3941 --download-attachment invoice.pdf -o ./invoice.pdf`
 - `ytissue AB-3941 --download-attachment invoice.pdf --stdout > invoice.pdf`
 
 Behavior:
@@ -579,7 +611,7 @@ Behavior:
 - `--attachment-info <id-or-name>` returns one attachment's metadata by exact ID or exact file name
 - `--attachment-info --json` returns that one attachment object
 - `--download-attachment <id-or-name>` requires exactly one explicit output target
-- supported output targets are `--output <path>` and `--stdout`
+- supported output targets are `-o, --output <path>` and `--stdout`
 - `--download-attachment` always means attachment content; `--json` is ignored in that mode
 - download matching accepts an exact attachment ID or exact file name
 - download refuses ambiguous name matches
@@ -672,12 +704,17 @@ Known concrete outputs from `AB-3941` at the time of testing:
 Current state:
 - npm publishing is automated through GitHub Actions Trusted Publishing
 - publish workflow lives at `.github/workflows/publish.yml`
+- publish workflow uses Node 24 because npm Trusted Publishing requires a newer Node/npm toolchain than the old Node 20 setup
 - tag-based release flow validates that `package.json` matches the pushed `v*` tag before publishing
 - publish job uses the `npm-publish` GitHub Actions environment so approval can gate the final publish step
 
 Remaining issue:
-- npm Trusted Publisher still needs to be configured once in the npm package settings if that has not already been done
-- GitHub should also have `v*` tag restrictions and the `npm-publish` environment reviewer configured
+- confirm the next publish succeeds with the updated Node 24 workflow
+- GitHub should also keep `v*` tag restrictions in place; environment approval is only available if the repo/plan exposes required reviewers in the UI
+
+Operational note:
+- in the current setup, the primary publish protection is the `v*` tag ruleset
+- if GitHub does not expose required reviewers for the `npm-publish` environment in the repo UI, rely on tag restrictions rather than waiting for environment approval
 
 ### 2. Local smoke workflow
 
@@ -711,7 +748,7 @@ Still open:
 ## Practical Guidance For The Next Thread
 
 If continuing development, recommended next priorities:
-1. complete the one-time npm Trusted Publisher setup and GitHub release protections if they are not yet configured
+1. verify the next npm publish on a fresh `v*` tag with the Node 24 workflow
 2. consider higher-level history/activity views
 3. revisit attachment UX follow-ups if they become painful in real usage
 
